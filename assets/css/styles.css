@@ -1,0 +1,567 @@
+/*==================== INTRANET GESTORÍA - ESTILOS CSS ====================*/
+
+/* ==================== PANTALLA DE CARGA (OVERLAY) ==================== */
+#loading-cl, #loading-gs {
+    display: none; /* Oculto por defecto */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.9);
+    z-index: 99999;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.spinner-cl, .spinner-gs {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #003B77;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 15px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+    font-family: sans-serif;
+    font-weight: bold;
+    color: #003B77;
+    font-size: 18px;
+}
+
+/* ==================== CONTENEDORES PRINCIPALES ==================== */
+.cliente-container,
+.gestor-container {
+    max-width: 1000px;
+    margin: 20px auto;
+    font-family: sans-serif;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    background: #fff;
+    border: 1px solid #ddd;
+}
+
+.cliente-header,
+.gestor-header {
+    background: #003B77;
+    color: #fff;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.breadcrumb-cl,
+.breadcrumb-gs {
+    padding: 12px 20px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+}
+
+/* ==================== ZONA DROP-ZONE ==================== */
+.drop-zone-cl,
+.drop-zone-gs {
+    margin: 20px;
+    padding: 30px;
+    border: 2px dashed #003B77;
+    border-radius: 8px;
+    text-align: center;
+    background: #fcfcfc;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.drop-zone-cl:hover,
+.drop-zone-gs:hover {
+    background: #f0f7ff;
+}
+
+/* ==================== BUSQUEDA ==================== */
+.search-cl,
+.search-gs {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+/* ==================== TABLAS ==================== */
+.cl-table,
+.gs-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.cl-table th,
+.gs-table th {
+    background: #f4f7f9;
+    color: #333;
+    text-align: left;
+    padding: 12px;
+    border-bottom: 2px solid #dee2e6;
+    font-size: 13px;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.cl-table td,
+.gs-table td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+    font-size: 14px;
+}
+
+.cl-table tr:hover,
+.gs-table tr:hover {
+    background-color: #f9f9f9;
+}
+
+/* ==================== BADGES ==================== */
+.badge-autor {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: bold;
+    display: inline-block;
+}
+
+.badge-cliente {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.badge-gestor {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.badge-sistema {
+    background: #f5f5f5;
+    color: #616161;
+}
+
+.badge-papelera {
+    background: #ffebee;
+    color: #c62828;
+}
+
+/* ==================== BOTONES DE ACCIÓN ==================== */
+
+/* Contenedor de botones alineados */
+.acciones-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    align-items: center;
+}
+
+/* Botón circular minimalista - Descargar */
+.btn-accion-circular {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background-color: #f0f2f5;
+    color: #555;
+    border-radius: 50%;
+    text-decoration: none !important;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.btn-accion-circular:hover {
+    background-color: #003B77;
+    color: #fff;
+    transform: scale(1.1);
+    box-shadow: 0 2px 6px rgba(0, 59, 119, 0.3);
+    border: 1px solid #003B77;
+}
+
+.btn-accion-circular span {
+    font-size: 16px;
+    line-height: 1;
+}
+
+/* Botón circular minimalista - Borrar */
+.btn-accion-circular-borrar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background-color: #f0f2f5;
+    color: #555;
+    border-radius: 50%;
+    text-decoration: none !important;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.btn-accion-circular-borrar:hover {
+    background-color: #ff5252;
+    color: #fff;
+    transform: scale(1.1);
+    box-shadow: 0 2px 6px rgba(255, 82, 82, 0.3);
+    border: 1px solid #ff5252;
+}
+
+.btn-accion-circular-borrar span {
+    font-size: 16px;
+    line-height: 1;
+}
+
+/* ==================== PESTAÑAS DE AUDITORÍA ==================== */
+.audit-tab-buttons {
+    margin: 15px 0;
+    display: flex;
+    gap: 10px;
+}
+
+.audit-tab-btn {
+    padding: 8px 16px;
+    border: 1px solid #ddd;
+    background: #f5f5f5;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: 0.3s;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.audit-tab-btn.active {
+    background: #003B77;
+    color: white;
+    border-color: #003B77;
+}
+
+.audit-tab-btn:hover {
+    background: #e8f1f7;
+}
+
+/* ==================== ACORDEÓN (DETALLES) ==================== */
+details {
+    cursor: pointer;
+    border: 1px solid #ffc107;
+    border-radius: 5px;
+    padding: 12px;
+    background: #fff9e6;
+    margin: 15px 0;
+}
+
+summary {
+    font-weight: bold;
+    color: #cc8800;
+    user-select: none;
+    transition: 0.2s;
+}
+
+summary:hover {
+    color: #996600;
+}
+
+summary::-webkit-details-marker {
+    margin-right: 8px;
+}
+
+details[open] summary {
+    color: #996600;
+}
+
+details > div {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #ffc107;
+    font-family: monospace;
+    font-size: 12px;
+    color: #333;
+    max-height: 300px;
+    overflow-y: auto;
+    line-height: 1.5;
+}
+
+/* ==================== LISTA DE CLIENTES ==================== */
+.file-list {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.client-item-gs {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+    transition: 0.2s;
+}
+
+.client-item-gs:hover {
+    background-color: #f5f5f5;
+}
+
+.client-item-gs a {
+    color: #333;
+    text-decoration: none;
+    display: block;
+}
+
+.client-item-gs a:hover {
+    color: #003B77;
+}
+
+/* ==================== RESPONSIVIDAD MÓVIL ==================== */
+@media screen and (max-width: 600px) {
+    
+    /* Contenedores principales */
+    .cliente-container,
+    .gestor-container {
+        margin: 10px;
+        width: auto;
+    }
+    
+    .cliente-header,
+    .gestor-header {
+        padding: 15px;
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+    }
+    
+    .cliente-header h3,
+    .gestor-header h3 {
+        margin: 0;
+    }
+    
+    /* Search en móvil */
+    .search-cl,
+    .search-gs {
+        font-size: 16px;
+    }
+    
+    /* Drop zone más pequeño */
+    .drop-zone-cl,
+    .drop-zone-gs {
+        margin: 15px;
+        padding: 20px;
+    }
+    
+    /* Forzar tabla a comportarse como bloques */
+    .cl-table,
+    .gs-table,
+    .cl-table thead,
+    .gs-table thead,
+    .cl-table tbody,
+    .gs-table tbody,
+    .cl-table th,
+    .gs-table th,
+    .cl-table td,
+    .gs-table td,
+    .cl-table tr,
+    .gs-table tr {
+        display: block;
+    }
+    
+    /* Esconder cabeceras de tabla */
+    .cl-table thead tr,
+    .gs-table thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+    
+    /* Filas de tabla */
+    .cl-table tr,
+    .gs-table tr {
+        border: 1px solid #eee;
+        margin-bottom: 10px;
+        border-radius: 8px;
+        background: #fdfdfd;
+        padding: 5px;
+    }
+    
+    /* Celdas de tabla */
+    .cl-table td,
+    .gs-table td {
+        border: none;
+        position: relative;
+        padding-left: 40% !important;
+        text-align: left !important;
+        min-height: 35px;
+        display: block;
+    }
+    
+    /* Etiquetas en móvil usando atributo data-label */
+    .cl-table td:before,
+    .gs-table td:before {
+        position: absolute;
+        left: 10px;
+        width: 35%;
+        padding-right: 10px;
+        white-space: nowrap;
+        font-weight: bold;
+        color: #003B77;
+        content: attr(data-label);
+    }
+    
+    /* Breadcrumb en móvil */
+    .breadcrumb-cl,
+    .breadcrumb-gs {
+        font-size: 12px;
+        padding: 8px 12px;
+    }
+    
+    /* Ajuste para las acciones en móvil */
+    .acciones-wrapper {
+        justify-content: flex-start !important;
+        margin-top: 5px;
+    }
+    
+    /* Botones más grandes en móvil */
+    .btn-accion-circular,
+    .btn-accion-circular-borrar {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .btn-accion-circular span,
+    .btn-accion-circular-borrar span {
+        font-size: 18px;
+    }
+    
+    /* Badges más pequeños */
+    .badge-autor {
+        font-size: 10px;
+        padding: 3px 8px;
+    }
+    
+    /* Pestañas de auditoría en móvil */
+    .audit-tab-buttons {
+        flex-direction: column;
+    }
+    
+    .audit-tab-btn {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+/* ==================== TABLET (768px) ==================== */
+@media screen and (min-width: 601px) and (max-width: 1024px) {
+    .cliente-container,
+    .gestor-container {
+        max-width: 95%;
+    }
+    
+    .cl-table,
+    .gs-table {
+        font-size: 13px;
+    }
+    
+    .cl-table td,
+    .gs-table td {
+        padding: 10px;
+    }
+}
+
+/* ==================== DESKTOP (1024px+) ==================== */
+@media screen and (min-width: 1025px) {
+    .cliente-container,
+    .gestor-container {
+        max-width: 1000px;
+    }
+}
+
+/* ==================== PRINT (Impresión) ==================== */
+@media print {
+    #loading-cl,
+    #loading-gs,
+    .drop-zone-cl,
+    .drop-zone-gs,
+    .search-cl,
+    .search-gs,
+    .audit-tab-buttons {
+        display: none !important;
+    }
+    
+    .cliente-container,
+    .gestor-container {
+        max-width: 100%;
+        box-shadow: none;
+        border: 1px solid #000;
+        page-break-inside: avoid;
+    }
+}
+
+/* ==================== ACCESIBILIDAD ==================== */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    .spinner-cl,
+    .spinner-gs {
+        border-top: 5px solid #003B77;
+        animation: none;
+    }
+}
+
+/* ==================== TEMA OSCURO (Opcional) ==================== */
+@media (prefers-color-scheme: dark) {
+    .cliente-container,
+    .gestor-container {
+        background: #1e1e1e;
+        border-color: #444;
+    }
+    
+    .cliente-header,
+    .gestor-header {
+        background: #003B77;
+    }
+    
+    .breadcrumb-cl,
+    .breadcrumb-gs {
+        background: #2a2a2a;
+        color: #fff;
+        border-bottom-color: #444;
+    }
+    
+    .cl-table th,
+    .gs-table th {
+        background: #2a2a2a;
+        color: #fff;
+        border-bottom-color: #444;
+    }
+    
+    .cl-table td,
+    .gs-table td {
+        border-bottom-color: #444;
+        color: #ddd;
+    }
+    
+    .cl-table tr:hover,
+    .gs-table tr:hover {
+        background-color: #2a2a2a;
+    }
+}
