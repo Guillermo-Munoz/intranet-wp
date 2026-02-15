@@ -15,19 +15,34 @@ class AdminUI {
         ob_start();
         ?>
         <style>
+            /* ESTILOS UNIFICADOS (IGUAL AL CLIENTE) */
             .gestor-container { max-width: 1000px; margin: 20px auto; font-family: sans-serif; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background: #fff; border: 1px solid #ddd; }
             .gestor-header { background: #003B77; color: #fff; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
             .breadcrumb-gs { padding: 12px 20px; background: #f8f9fa; border-bottom: 1px solid #eee; font-size: 14px; }
-            .gs-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            .gs-table th { background: #f4f7f9; color: #333; text-align: left; padding: 12px; border-bottom: 2px solid #dee2e6; font-size: 13px; }
-            .gs-table td { padding: 12px; border-bottom: 1px solid #eee; vertical-align: middle; font-size: 14px; }
+            
+            /* Clases de tabla y elementos del cliente */
+            .cl-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            .cl-table th { background: #f4f7f9; color: #333; text-align: left; padding: 12px; border-bottom: 2px solid #dee2e6; font-size: 13px; }
+            .cl-table td { padding: 12px; border-bottom: 1px solid #eee; vertical-align: middle; font-size: 14px; }
+            
+            .search-cl { width:100%; padding:10px; border:1px solid #ddd; border-radius:5px; margin-bottom:15px; box-sizing: border-box; }
+            
+            /* Drop Zone del cliente */
+            .drop-zone-cl { border: 2px dashed #ccc; padding: 25px; text-align: center; background: #fcfcfc; border-radius: 8px; margin-bottom: 20px; cursor: pointer; transition: 0.3s; }
+            .drop-zone-cl:hover { border-color: #003B77; background: #f0f7ff; }
+            
             .audit-tab-buttons { margin: 15px 0; display: flex; gap: 10px; }
             .audit-tab-btn { padding: 8px 16px; border: 1px solid #ddd; background: #f5f5f5; cursor: pointer; border-radius: 5px; font-size: 14px; }
             .audit-tab-btn.active { background: #003B77; color: white; }
+
+            /* Loader */
+            #loading-gs { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: none; align-items: center; justify-content: center; z-index: 9999; flex-direction: column; }
+            .spinner-cl { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #003B77; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 10px; }
+            @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         </style>
         
         <div id="loading-gs">
-            <div class="spinner-gs"></div>
+            <div class="spinner-cl"></div>
             <div style="font-weight:bold; color:#003B77;">🚀 Procesando...</div>
         </div>
         
@@ -91,8 +106,8 @@ class AdminUI {
                 }
                 
                 if (!empty($trash_items)) {
-                    echo '<table class="gs-table" style="margin-top: 20px;">';
-                    echo '<thead><tr><th>Archivo Eliminado</th><th>Fecha</th><th>Acción</th></tr></thead>';
+                    echo '<table class="cl-table" style="margin-top: 20px;">';
+                    echo '<thead><tr><th>Documento</th><th>Fecha</th><th style="text-align:right;">Acción</th></tr></thead>';
                     echo '<tbody>';
                     
                     foreach ($trash_items as $item) {
@@ -110,12 +125,12 @@ class AdminUI {
                         echo '<td style="text-align:right;"><div style="display:flex; gap:8px; justify-content:flex-end;">';
                         
                         if (!$es_carpeta) {
-                            echo '<a href="' . home_url('/descarga.php?archivo=' . urlencode($ver_cliente . '/' . INTRANET_TRASH_FOLDER . '/' . $item)) . '" download style="background:#003B77; color:white; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; text-decoration:none;">📥</a>';
+                            echo '<a href="' . home_url('/descarga.php?archivo=' . urlencode($ver_cliente . '/' . INTRANET_TRASH_FOLDER . '/' . $item)) . '" class="btn-accion-circular">📥</a>';
                         }
                         
                         echo '<form method="post" style="margin:0;" onsubmit="if(confirm(\'¿Eliminar permanentemente?\')) { document.getElementById(\'loading-gs\').style.display=\'flex\'; return true; } return false;">';
                         echo '<input type="hidden" name="ruta_archivo_papelera" value="' . esc_attr($ver_cliente . '/' . INTRANET_TRASH_FOLDER . '/' . $item) . '">';
-                        echo '<button type="submit" name="borrar_archivo_papelera" style="border:none; background:#ff5252; color:white; border-radius:50%; width:32px; height:32px; cursor:pointer;">🗑️</button>';
+                        echo '<button type="submit" name="borrar_archivo_papelera" class="btn-accion-circular-borrar">🗑️</button>';
                         echo '</form>';
                         
                         echo '</div></td></tr>';
@@ -128,9 +143,18 @@ class AdminUI {
                 
             <?php else: ?>
                 
-                <input type="text" id="searchFileGs" class="search-gs" placeholder="🔍 Buscar..." style="width:100%; padding:10px; border:1px solid #ddd; border-radius:5px; margin-bottom:15px;" onkeyup="filterGs()">
+                <input type="text" id="searchFileCl" class="search-cl" placeholder="🔍 Buscar por nombre..." onkeyup="filterCl()">
                 
-                <table class="gs-table">
+                <form method="post" enctype="multipart/form-data" id="formCl">
+                    <input type="hidden" name="rutas_relativas" id="rutas_relativas_cl">
+                    <div class="drop-zone-cl" id="dropZoneCl">
+                        <strong>Subir Archivos o Carpetas</strong>
+                        <p style="font-size:12px; color:#666; margin:5px 0 0;">Arrastra documentos aquí</p>
+                        <input type="file" name="archivo_gestor[]" id="inputCl" multiple style="display:none;">
+                    </div>
+                </form>
+                
+                <table class="cl-table" id="tablaArchivos">
                     <thead>
                         <tr>
                             <th>Documento</th>
@@ -141,7 +165,7 @@ class AdminUI {
                     </thead>
                     <tbody>
                     <?php foreach ($files as $file): ?>
-                        <tr class="search-item-gs">
+                        <tr class="search-item-cl">
                             <td>
                                 <?php if ($file['is_dir']): ?>
                                     <a href="?ver_cliente=<?php echo $ver_cliente; ?>&dir=<?php echo urlencode($file['rel_path']); ?>" style="text-decoration:none; color:#333;">📁 <b><?php echo esc_html(str_replace('_gs_', '', $file['name'])); ?>/</b></a>
@@ -154,12 +178,12 @@ class AdminUI {
                             <td style="text-align:right;">
                                 <div style="display:flex; gap:8px; justify-content:flex-end;">
                                     <?php if (!$file['is_dir']): ?>
-                                        <a href="<?php echo home_url('/descarga.php?archivo=' . urlencode($ver_cliente . '/' . $file['rel_path'])); ?>" download style="background:#003B77; color:white; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; text-decoration:none;">📥</a>
+                                        <a href="<?php echo home_url('/descarga.php?archivo=' . urlencode($ver_cliente . '/' . $file['rel_path'])); ?>" class="btn-accion-circular">📥</a>
                                     <?php endif; ?>
                                     
-                                    <form method="post" style="margin:0;" onsubmit="if(confirm('¿Eliminar?')) { document.getElementById(\'loading-gs\').style.display=\'flex\'; return true; } return false;">
+                                    <form method="post" style="margin:0;" onsubmit="if(confirm('¿Eliminar?')) { document.getElementById('loading-gs').style.display='flex'; return true; } return false;">
                                         <input type="hidden" name="ruta_archivo" value="<?php echo esc_attr($ver_cliente . '/' . $file['rel_path']); ?>">
-                                        <button type="submit" name="borrar_archivo" style="border:none; background:#ff5252; color:white; border-radius:50%; width:32px; height:32px; cursor:pointer;">×</button>
+                                        <button type="submit" name="borrar_archivo" class='btn-accion-circular-borrar'>×</button>
                                     </form>
                                 </div>
                             </td>
@@ -176,7 +200,7 @@ class AdminUI {
             
             <div class="gestor-header"><strong>🏢 Listado de Clientes</strong></div>
             <div style="padding:20px;">
-                <input type="text" id="searchClientGs" class="search-gs" placeholder="🔍 Buscar cliente..." style="width:100%; padding:10px; border:1px solid #ddd; border-radius:5px; margin-bottom:15px;" onkeyup="filterClientes()">
+                <input type="text" id="searchClientGs" class="search-cl" placeholder="🔍 Buscar cliente..." onkeyup="filterClientes()">
                 <div class="file-list">
                     <?php
                     if (file_exists(INTRANET_CLIENTS_DIR)) {
@@ -200,14 +224,57 @@ class AdminUI {
         </div>
         
         <script>
-            function filterGs() {
-                let val = document.getElementById('searchFileGs').value.toLowerCase();
-                let items = document.querySelectorAll('.search-item-gs');
-                items.forEach(item => {
-                    item.style.display = item.innerText.toLowerCase().includes(val) ? "table-row" : "none";
-                });
+            // Lógica de subida idéntica a la del cliente
+            const dzCl = document.getElementById('dropZoneCl');
+            const inCl = document.getElementById('inputCl');
+            const formCl = document.getElementById('formCl');
+            const loaderCl = document.getElementById('loading-gs');
+
+            if(dzCl) {
+                dzCl.onclick = () => inCl.click();
+                inCl.onchange = () => { if(inCl.files.length) { loaderCl.style.display='flex'; formCl.submit(); } };
+                dzCl.ondragover = (e) => { e.preventDefault(); dzCl.style.background = "#f0f7ff"; };
+                dzCl.ondragleave = () => { dzCl.style.background = "#fcfcfc"; };
+                dzCl.ondrop = async (e) => {
+                    e.preventDefault();
+                    loaderCl.style.display = 'flex';
+                    const items = e.dataTransfer.items;
+                    if (items) {
+                        const dt = new DataTransfer();
+                        let paths = [];
+                        for (let item of items) {
+                            const entry = item.webkitGetAsEntry();
+                            if (entry) await traverseCl(entry, "", dt, paths);
+                        }
+                        inCl.files = dt.files;
+                        document.getElementById('rutas_relativas_cl').value = paths.join('|');
+                        formCl.submit();
+                    }
+                };
             }
-            
+
+            async function traverseCl(item, path, dt, paths) {
+                if (item.isFile) {
+                    const file = await new Promise(res => item.file(res));
+                    dt.items.add(file);
+                    paths.push(path + file.name);
+                } else if (item.isDirectory) {
+                    const reader = item.createReader();
+                    const entries = await new Promise(res => reader.readEntries(res));
+                    for (let e of entries) await traverseCl(e, path + item.name + "/", dt, paths);
+                }
+            }
+
+            // Buscador de archivos (estilo cliente)
+            function filterCl() {
+                let val = document.getElementById('searchFileCl').value.toLowerCase();
+                let items = document.getElementsByClassName('search-item-cl');
+                for (let i = 0; i < items.length; i++) {
+                    items[i].style.display = items[i].innerText.toLowerCase().includes(val) ? "table-row" : "none";
+                }
+            }
+
+            // Buscador de clientes
             function filterClientes() {
                 let val = document.getElementById('searchClientGs').value.toLowerCase();
                 let items = document.querySelectorAll('.client-item-gs');

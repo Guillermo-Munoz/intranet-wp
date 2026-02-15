@@ -88,10 +88,12 @@ class AdminManager {
     }
     
     private function getAuthor($filename) {
+        // Si empieza por _gs_ es Gestoría
         if (strpos($filename, '_gs_') === 0) {
             return 'Gestoría';
-        } else {
-            return 'Sistema';
-        }
+        } 
+        // Si el nombre contiene una fecha típica de subida de cliente (ej. 2023_...) 
+        // o simplemente no tiene prefijo, asumimos Cliente
+        return 'Cliente';
     }
 }

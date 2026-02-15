@@ -83,7 +83,7 @@ class ClientUI {
                                     <?php if ($file['name'] !== INTRANET_YEAR && strpos($file['name'], '_gs_') !== 0): ?>
                                         <form method="post" style="margin:0;" onsubmit="if(confirm('¿Eliminar?')) { document.getElementById(\'loading-cl\').style.display=\'flex\'; return true; } return false;">
                                             <input type="hidden" name="ruta_archivo" value="<?php echo esc_attr($file['rel_path']); ?>">
-                                            <button type="submit" name="borrar_archivo_cliente" style="border:none; background:#ff5252; color:white; border-radius:50%; width:32px; height:32px; cursor:pointer;">×</button>
+                                            <button type="submit" name="borrar_archivo_cliente" class='btn-accion-circular-borrar'>×</button>
                                         </form>
                                     <?php elseif (strpos($file['name'], '_gs_') === 0 || $file['name'] === INTRANET_YEAR): ?>
                                         <div style="opacity:0.3; cursor:help;">🔒</div>
