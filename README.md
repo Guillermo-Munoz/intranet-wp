@@ -31,7 +31,6 @@ ADMIN SIDE:
 STYLES:
 15-styles.css                           → wp-content/plugins/intranet-gestoria/assets/css/styles.css
 ```
-
 ## 📂 ESTRUCTURA DE CARPETAS
 
 ```
