@@ -1,0 +1,32 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+error_log
+
+# Environment
+.env
+.env.local
+
+
+# ❌ EXCLUIR ZIPS
+*.zip
+*.tar.gz
+*.tgz
+*.7z
+*.rar
+*.gz
+releases/
+*.release.zip
+
+# ❌ EXCLUIR MDS
+*.md
+!README.md
