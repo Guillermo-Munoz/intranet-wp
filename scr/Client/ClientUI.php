@@ -67,29 +67,40 @@ class ClientUI {
                         <tr class="search-item-cl">
                             <td>
                                 <?php if ($file['is_dir']): ?>
-                                    <a href="?dir=<?php echo urlencode($file['rel_path']); ?>" style="text-decoration:none; color:#333;">📁 <b><?php echo esc_html(str_replace('_gs_', '', $file['name'])); ?>/</b></a>
+                                    <a href="?ver_cliente=<?php echo $ver_cliente; ?>&dir=<?php echo urlencode($file['rel_path']); ?>" style="text-decoration:none; color:#333;">📁 <b><?php echo esc_html(str_replace('_gs_', '', $file['name'])); ?>/</b></a>
                                 <?php else: ?>
-                                    <a href="<?php echo home_url('/descarga.php?archivo=' . urlencode($manager->getIdCarpeta() . '/' . $file['rel_path'])); ?>" target="_blank" style="text-decoration:none; color:#003B77;">📄 <?php echo esc_html($file['name']); ?></a>
+                                    <a href="<?php echo admin_url('admin-ajax.php?action=ig_descarga&view=1&archivo=' . urlencode($manager->getIdCarpeta() . '/' . $file['rel_path'])); ?>" target="_blank" style="text-decoration:none; color:#003B77;">
+                                        📄 <?php echo esc_html(str_replace('_gs_', '', $file['name'])); ?>
+                                    </a>
                                 <?php endif; ?>
                             </td>
                             <td><?php echo date('d/m/Y H:i', $file['date']); ?></td>
                             <td><span class="badge-autor badge-<?php echo strtolower($file['author']); ?>"><?php echo $file['author']; ?></span></td>
                             <td style="text-align:right;">
-                                <div style="display:flex; gap:8px; justify-content:flex-end;">
-                                    <?php if (!$file['is_dir'] && strpos($file['name'], '_gs_') !== 0): ?>
-                                        <a href="<?php echo home_url('/descarga.php?archivo=' . urlencode($manager->getIdCarpeta() . '/' . $file['rel_path'])); ?>" download class="btn-accion-circular" title="Descargar">📥</a>
-                                    <?php endif; ?>
-                                    
-                                    <?php if ($file['name'] !== INTRANET_YEAR && strpos($file['name'], '_gs_') !== 0): ?>
-                                        <form method="post" style="margin:0;" onsubmit="if(confirm('¿Eliminar?')) { document.getElementById(\'loading-cl\').style.display=\'flex\'; return true; } return false;">
-                                            <input type="hidden" name="ruta_archivo" value="<?php echo esc_attr($file['rel_path']); ?>">
-                                            <button type="submit" name="borrar_archivo_cliente" class='btn-accion-circular-borrar'>×</button>
-                                        </form>
-                                    <?php elseif (strpos($file['name'], '_gs_') === 0 || $file['name'] === INTRANET_YEAR): ?>
-                                        <div style="opacity:0.3; cursor:help;">🔒</div>
-                                    <?php endif; ?>
-                                </div>
-                            </td>
+                            <div style="display:flex; gap:8px; justify-content:flex-end; align-items:center;">
+                                
+                                <?php if (!$file['is_dir']): ?>
+                                    <a href="<?php echo admin_url('admin-ajax.php?action=ig_descarga&archivo=' . urlencode($manager->getIdCarpeta() . '/' . $file['rel_path'])); ?>" 
+                                    download class="btn-accion-circular" title="Descargar">📥</a>
+                                <?php endif; ?>
+
+                                <?php 
+                                // Identificamos el autor basándonos en tu jerarquía de tres
+                                $es_sistema  = ($file['name'] === INTRANET_YEAR);
+                                $es_gestoria = (strpos($file['name'], '_gs_') === 0);
+                                
+                                // Si NO es sistema y NO es gestoria, entonces es CLIENTE (puede borrar)
+                                if (!$es_sistema && !$es_gestoria): ?>
+                                    <form method="post" style="margin:0;" onsubmit="if(confirm('¿Eliminar?')) { document.getElementById('loading-cl').style.display='flex'; return true; } return false;">
+                                        <input type="hidden" name="ruta_archivo" value="<?php echo esc_attr($file['rel_path']); ?>">
+                                        <button type="submit" name="borrar_archivo_cliente" class='btn-accion-circular-borrar'>×</button>
+                                    </form>
+                                <?php else: ?>
+                                    <div style="opacity:0.3; cursor:help;" title="<?php echo $es_sistema ? 'Carpeta de Sistema' : 'Protegido por Gestoría'; ?>">🔒</div>
+                                <?php endif; ?>
+
+                            </div>
+                        </td>
                         </tr>
                     <?php endforeach; ?>
                     </tbody>
