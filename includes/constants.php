@@ -20,3 +20,7 @@ define('INTRANET_MAX_FILE_SIZE', 50 * 1024 * 1024); // 50MB
 
 // UI
 define('INTRANET_ITEMS_PER_PAGE', 50);
+
+// Roles
+define('IG_ROLE_WORKER', 'trabajador');
+define('IG_META_ASSIGNED_WORKER', '_ig_assigned_worker_id');
