@@ -45,6 +45,12 @@ class AdminManager {
                 'author' => $this->getAuthor($item),
             ];
         }
+
+            // Ordenar por fecha (más reciente primero)
+        usort($result, function($a, $b) {
+            return $b['date'] - $a['date'];
+        });
+
         return $result;
     }
     
