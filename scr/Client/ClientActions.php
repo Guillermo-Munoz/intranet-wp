@@ -46,7 +46,30 @@ class ClientActions {
             
             move_uploaded_file($_FILES['archivo_cliente']['tmp_name'][$key], $target_dir . '/' . $file_name);
         }
-        
+
+        // Enviar notificaciones por email
+        $current_user = wp_get_current_user();
+
+        // Email al administrador
+        $admin_email = get_option('admin_email');
+        $subject = 'Nuevos documentos subidos por cliente';
+        $message = "El cliente {$current_user->display_name} ha subido nuevos documentos a su expediente.\n\n";
+        $message .= "Puedes revisarlos desde el panel de administración.\n\n";
+        $message .= "Saludos,\nSistema de Gestoría";
+
+        wp_mail($admin_email, $subject, $message);
+
+        // Email al trabajador asignado (si tiene)
+        $worker = ig_get_worker_by_client($current_user->ID);
+        if ($worker && $worker->user_email) {
+            $worker_message = "Hola {$worker->display_name},\n\n";
+            $worker_message .= "Tu cliente asignado {$current_user->display_name} ha subido nuevos documentos a su expediente.\n\n";
+            $worker_message .= "Puedes revisarlos desde tu panel de trabajador.\n\n";
+            $worker_message .= "Saludos,\nSistema de Gestoría";
+
+            wp_mail($worker->user_email, $subject, $worker_message);
+        }
+
         wp_safe_redirect($_SERVER['REQUEST_URI']);
         exit;
     }
