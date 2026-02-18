@@ -128,11 +128,11 @@ class AdminUI {
                             echo '<a href="' . home_url('/descarga.php?archivo=' . urlencode($ver_cliente . '/' . INTRANET_TRASH_FOLDER . '/' . $item)) . '" class="btn-accion-circular">📥</a>';
                         }
                         
-                        echo '<form method="post" style="margin:0;" onsubmit="if(confirm(\'¿Eliminar permanentemente?\')) { document.getElementById(\'loading-gs\').style.display=\'flex\'; return true; } return false;">';
+                        echo '<form method="post" style="margin:0;" action="' . esc_url($_SERVER['REQUEST_URI']) . '" onsubmit="if(confirm(\'¿Eliminar permanentemente?\')) { document.getElementById(\'loading-gs\').style.display=\'flex\'; return true; } return false;">';
                         echo '<input type="hidden" name="ruta_archivo_papelera" value="' . esc_attr($ver_cliente . '/' . INTRANET_TRASH_FOLDER . '/' . $item) . '">';
                         echo '<button type="submit" name="borrar_archivo_papelera" class="btn-accion-circular-borrar">🗑️</button>';
                         echo '</form>';
-                        
+                                                
                         echo '</div></td></tr>';
                     }
                     echo '</tbody></table>';
@@ -145,8 +145,12 @@ class AdminUI {
                 
                 <input type="text" id="searchFileCl" class="search-cl" placeholder="🔍 Buscar por nombre..." onkeyup="filterCl()">
                 
-                <form method="post" enctype="multipart/form-data" id="formCl">
+                <form method="post" enctype="multipart/form-data" id="formCl" action="<?php echo esc_url(home_url('/customer-area/dashboard/?ver_cliente=' . $ver_cliente . ($sub_actual ? '&dir=' . urlencode($sub_actual) : ''))); ?>">
                     <input type="hidden" name="rutas_relativas" id="rutas_relativas_cl">
+                    <input type="hidden" name="dir" value="<?php echo esc_attr($sub_actual); ?>">
+                    
+                    <input type="hidden" name="dir_actual" value="<?php echo esc_attr($sub_actual); ?>">
+
                     <div class="drop-zone-cl" id="dropZoneCl">
                         <strong>Subir Archivos o Carpetas</strong>
                         <p style="font-size:12px; color:#666; margin:5px 0 0;">Arrastra documentos aquí</p>
@@ -165,30 +169,38 @@ class AdminUI {
                     </thead>
                     <tbody>
                     <?php foreach ($files as $file): ?>
-                        <tr class="search-item-cl">
-                            <td>
-                                <?php if ($file['is_dir']): ?>
-                                    <a href="?ver_cliente=<?php echo $ver_cliente; ?>&dir=<?php echo urlencode($file['rel_path']); ?>" style="text-decoration:none; color:#333;">📁 <b><?php echo esc_html(str_replace('_gs_', '', $file['name'])); ?>/</b></a>
-                                <?php else: ?>
-                                    <a href="<?php echo home_url('/descarga.php?archivo=' . urlencode($ver_cliente . '/' . $file['rel_path'])); ?>" target="_blank" style="text-decoration:none; color:#003B77;">📄 <?php echo esc_html($file['name']); ?></a>
-                                <?php endif; ?>
-                            </td>
-                            <td><?php echo date('d/m/Y H:i', $file['date']); ?></td>
-                            <td><span class="badge-autor badge-<?php echo strtolower($file['author']); ?>"><?php echo $file['author']; ?></span></td>
-                            <td style="text-align:right;">
-                                <div style="display:flex; gap:8px; justify-content:flex-end;">
-                                    <?php if (!$file['is_dir']): ?>
-                                        <a href="<?php echo home_url('/descarga.php?archivo=' . urlencode($ver_cliente . '/' . $file['rel_path'])); ?>" class="btn-accion-circular">📥</a>
+                            <tr class="search-item-cl">
+                                <td>
+                                    <?php if ($file['is_dir']): ?>
+                                        <a href="?ver_cliente=<?php echo $ver_cliente; ?>&dir=<?php echo urlencode($file['rel_path']); ?>" style="text-decoration:none; color:#333;">📁 <b><?php echo esc_html(str_replace('_gs_', '', $file['name'])); ?>/</b></a>
+                                    <?php else: ?>
+                                        <a href="<?php echo admin_url('admin-ajax.php?action=ig_descarga&view=1&archivo=' . urlencode($ver_cliente . '/' . $file['rel_path'])); ?>" target="_blank" style="text-decoration:none; color:#003B77;">
+                                            📄 <?php echo esc_html(str_replace('_gs_', '', $file['name'])); ?>
+                                        </a>
                                     <?php endif; ?>
-                                    
-                                    <form method="post" style="margin:0;" onsubmit="if(confirm('¿Eliminar?')) { document.getElementById('loading-gs').style.display='flex'; return true; } return false;">
-                                        <input type="hidden" name="ruta_archivo" value="<?php echo esc_attr($ver_cliente . '/' . $file['rel_path']); ?>">
-                                        <button type="submit" name="borrar_archivo" class='btn-accion-circular-borrar'>×</button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
+                                </td>
+                                <td><?php echo date('d/m/Y H:i', $file['date']); ?></td>
+                                
+                                <td>
+                                    <?php $autor_final = ($file['is_dir'] || $file['name'] === INTRANET_YEAR) ? 'Sistema' : $file['author']; ?>
+                                    <span class="badge-autor badge-<?php echo strtolower($autor_final); ?>">
+                                        <?php echo $autor_final; ?>
+                                    </span>
+                                </td>
+
+                                <td style="text-align:right;">
+                                    <div style="display:flex; gap:8px; justify-content:flex-end;">
+                                        <?php if (!$file['is_dir']): ?>
+                                          <a href="<?php echo admin_url('admin-ajax.php?action=ig_descarga&archivo=' . urlencode($ver_cliente . '/' . $file['rel_path'])); ?>" download class="btn-accion-circular" title="Descargar">📥</a>                                        <?php endif; ?>
+                                        
+                                        <form method="post" style="margin:0;" action="<?php echo esc_url($_SERVER['REQUEST_URI']); ?>" onsubmit="if(confirm('¿Eliminar archivo?')) { document.getElementById('loading-gs').style.display='flex'; return true; } return false;">
+                                            <input type="hidden" name="ruta_archivo" value="<?php echo esc_attr($ver_cliente . '/' . $file['rel_path']); ?>">
+                                            <button type="submit" name="borrar_archivo" class='btn-accion-circular-borrar'>×</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
                     </tbody>
                 </table>
                 
@@ -197,28 +209,235 @@ class AdminUI {
             </div>
         
         <?php else: ?>
-            
-            <div class="gestor-header"><strong>🏢 Listado de Clientes</strong></div>
-            <div style="padding:20px;">
-                <input type="text" id="searchClientGs" class="search-cl" placeholder="🔍 Buscar cliente..." onkeyup="filterClientes()">
-                <div class="file-list">
-                    <?php
-                    if (file_exists(INTRANET_CLIENTS_DIR)) {
-                        foreach (array_diff(scandir(INTRANET_CLIENTS_DIR), ['.', '..']) as $f) {
-                            $p = explode('-', $f);
-                            if (count($p) < 2) continue;
-                            $u = get_userdata($p[1]);
-                            if ($u && !in_array('administrator', $u->roles)) {
-                                echo "<div class='client-item-gs' style='padding:12px; border-bottom:1px solid #eee;'>
-                                        <a href='?ver_cliente=".urlencode($f)."' style='text-decoration:none; color:#333;'>👤 <b>".esc_html($u->display_name)."</b></a>
-                                      </div>";
-                            }
-                        }
-                    }
-                    ?>
+
+            <?php
+            // Nueva vista: Ver clientes de un trabajador específico
+            $ver_trabajador = isset($_GET['ver_trabajador']) ? intval($_GET['ver_trabajador']) : null;
+
+            if ($ver_trabajador):
+                $worker_info = get_userdata($ver_trabajador);
+                $assigned_clients = ig_get_clients_by_worker($ver_trabajador);
+                ?>
+
+                <div class="gestor-header">
+                    <h3 style="margin:0; color:white;">👷 Clientes de <?php echo $worker_info ? esc_html($worker_info->display_name) : 'Trabajador'; ?></h3>
+                    <a href="<?php echo strtok($_SERVER["REQUEST_URI"], '?'); ?>" style="color:#fff; font-size:12px; text-decoration:none; background:rgba(255,255,255,0.1); padding:5px 10px; border-radius:4px;">✕ Volver</a>
                 </div>
+
+                <div style="padding:20px;">
+                    <input type="text" id="searchWorkerClients" class="search-cl" placeholder="🔍 Buscar cliente..." onkeyup="filterWorkerDetailClients()">
+
+                    <?php if (empty($assigned_clients)): ?>
+                        <p style="color:#999; padding:20px; background:#f5f5f5; border-radius:5px; text-align:center;">
+                            Este trabajador no tiene clientes asignados.
+                        </p>
+                    <?php else: ?>
+                        <div style="border:1px solid #ddd; border-radius:8px; overflow:hidden;">
+                            <?php foreach ($assigned_clients as $client): ?>
+                                <?php
+                                $folder_name = intranet_get_client_folder($client->ID, $client->display_name);
+                                ?>
+                                <div class="worker-detail-client" style="padding:15px; border-top:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
+                                    <div style="flex:1;">
+                                        <a href="?ver_cliente=<?php echo urlencode($folder_name); ?>" style="text-decoration:none; color:#333; font-weight:bold;">
+                                            👤 <?php echo esc_html($client->display_name); ?>
+                                        </a>
+                                        <span style="color:#999; font-size:12px; margin-left:10px;"><?php echo $client->user_email; ?></span>
+                                    </div>
+                                    <form method="post" style="margin:0;" action="<?php echo esc_url(home_url('/customer-area/dashboard/')); ?>" onsubmit="return confirm('¿Desvincular este cliente del trabajador?');">
+                                        <input type="hidden" name="client_id" value="<?php echo $client->ID; ?>">
+                                        <button type="submit" name="desvincular_trabajador" style="background:#ffebee; color:#c62828; border:none; padding:6px 12px; border-radius:5px; cursor:pointer; font-size:12px;">
+                                            🔗 Desvincular
+                                        </button>
+                                    </form>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+            <?php else: ?>
+
+            <div class="gestor-header"><strong>🏢 Gestión de Trabajadores y Clientes</strong></div>
+            <div style="padding:20px;">
+                <?php
+                // Mensajes de feedback
+                if (isset($_GET['msg'])) {
+                    $msg = sanitize_text_field($_GET['msg']);
+                    $messages = [
+                        'promoted' => '✅ Usuario promovido a Trabajador correctamente.',
+                        'assigned' => '✅ Cliente asignado al Trabajador correctamente.',
+                        'unassigned' => '✅ Cliente desvinculado del Trabajador correctamente.',
+                        'demoted' => '✅ Trabajador degradado a Cliente correctamente.'
+                    ];
+                    if (isset($messages[$msg])) {
+                        echo '<div style="padding:12px; background:#e8f5e9; color:#2e7d32; border-left:4px solid #2e7d32; margin-bottom:15px; border-radius:4px;">' . $messages[$msg] . '</div>';
+                    }
+                }
+                ?>
+
+                <input type="text" id="searchClientGs" class="search-cl" placeholder="🔍 Buscar trabajador o cliente..." onkeyup="filterAll()">
+
+                <?php
+                // Obtener trabajadores y clientes sin asignar
+                $workers = ig_get_all_workers();
+                $unassigned_clients = ig_get_unassigned_clients();
+
+                // Separar trabajadores con y sin clientes
+                $workers_without_clients = [];
+                $workers_with_clients = [];
+
+                foreach ($workers as $worker) {
+                    $assigned_clients = ig_get_clients_by_worker($worker->ID);
+                    if (empty($assigned_clients)) {
+                        $workers_without_clients[] = $worker;
+                    } else {
+                        $workers_with_clients[] = ['worker' => $worker, 'clients' => $assigned_clients];
+                    }
+                }
+                ?>
+
+                <!-- SECCIÓN 1: Trabajadores SIN clientes -->
+                <h3 style="margin-top:0;">🔵 Trabajadores sin Clientes Asignados</h3>
+
+                <?php if (empty($workers_without_clients)): ?>
+                    <p style="color:#999; padding:20px; background:#f5f5f5; border-radius:5px; text-align:center;">
+                        ✅ Todos los trabajadores tienen clientes asignados.
+                    </p>
+                <?php else: ?>
+                    <div style="border:1px solid #ddd; border-radius:8px; overflow:hidden; margin-bottom:30px;">
+                        <?php foreach ($workers_without_clients as $worker): ?>
+                            <div class="worker-no-clients" style="padding:15px; border-top:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
+                                <div style="flex:1;">
+                                    <strong>👷 <?php echo esc_html($worker->display_name); ?></strong>
+                                    <span style="color:#999; font-size:12px; margin-left:10px;"><?php echo $worker->user_email; ?></span>
+                                </div>
+                                <div style="display:flex; gap:10px; align-items:center;">
+                                    <span style="background:#e3f2fd; color:#1976d2; padding:4px 12px; border-radius:20px; font-size:12px;">
+                                        Sin clientes
+                                    </span>
+                                        <form method="post" style="margin:0; display:inline-block;" action="<?php echo esc_url(home_url('/customer-area/dashboard/')); ?>" onsubmit="return confirm('¿Degradar <?php echo esc_html($worker->display_name); ?> a Cliente?');">
+                                        <input type="hidden" name="worker_id" value="<?php echo $worker->ID; ?>">
+                                        <button type="submit" name="degradar_trabajador" style="background:#FF6B6B; color:white; border:none; padding:6px 12px; border-radius:5px; cursor:pointer; font-size:13px; white-space:nowrap; display:block;">
+                                            ⬇️ Degradar
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+
+                <!-- SECCIÓN 2: Trabajadores CON clientes (resumen) -->
+                <h3 style="margin-top:30px;">🟢 Trabajadores con Clientes Asignados</h3>
+
+                <?php if (empty($workers_with_clients)): ?>
+                    <p style="color:#999; padding:20px; background:#f5f5f5; border-radius:5px; text-align:center;">
+                        No hay trabajadores con clientes asignados.
+                    </p>
+                <?php else: ?>
+                    <?php foreach ($workers_with_clients as $worker_data): ?>
+                        <?php
+                        $worker = $worker_data['worker'];
+                        $clients = $worker_data['clients'];
+                        $num_clients = count($clients);
+                        ?>
+                        <div class="worker-section-summary" style="margin-bottom:20px; border:1px solid #ddd; border-radius:8px; overflow:hidden;">
+                            <div style="background:#2E7D32; color:white; padding:15px; display:flex; justify-content:space-between; align-items:center;">
+                                <div style="flex:1;">
+                                    <strong>👷 <?php echo esc_html($worker->display_name); ?></strong>
+                                    <span style="background:rgba(255,255,255,0.2); padding:4px 12px; border-radius:20px; font-size:12px; margin-left:10px;">
+                                        <?php echo $num_clients . ' ' . ($num_clients === 1 ? 'cliente' : 'clientes'); ?>
+                                    </span>
+                                </div>
+                                <div style="display:flex; gap:10px; align-items:center;">
+                                    <a href="?ver_trabajador=<?php echo $worker->ID; ?>" style="background:#fff; color:#2E7D32; text-decoration:none; padding:8px 16px; border-radius:5px; font-size:13px; font-weight:bold;">
+                                        📋 Ver Todos los Clientes
+                                    </a>
+                                    <form method="post" style="margin:0; display:inline-block;" action="<?php echo esc_url(home_url('/customer-area/dashboard/')); ?>" onsubmit="return confirm('¿Degradar <?php echo esc_html($worker->display_name); ?> a Cliente? Se perderán sus asignaciones.');">
+                                        <input type="hidden" name="worker_id" value="<?php echo $worker->ID; ?>">
+                                        <button type="submit" name="degradar_trabajador" style="background:#FF6B6B; color:white; border:none; padding:8px 14px; border-radius:5px; cursor:pointer; font-size:13px; font-weight:bold; white-space:nowrap;">
+                                            ⬇️ Degradar
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <div style="padding:15px; background:#fafafa;">
+                                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                                    <?php
+                                    // Mostrar primeros 3 clientes como preview
+                                    $preview_clients = array_slice($clients, 0, 3);
+                                    foreach ($preview_clients as $client):
+                                    ?>
+                                        <span style="background:#fff; border:1px solid #ddd; padding:6px 12px; border-radius:20px; font-size:12px;">
+                                            👤 <?php echo esc_html($client->display_name); ?>
+                                        </span>
+                                    <?php endforeach; ?>
+                                    <?php if ($num_clients > 3): ?>
+                                        <span style="background:#e3f2fd; border:1px solid #90caf9; padding:6px 12px; border-radius:20px; font-size:12px; color:#1976d2;">
+                                            +<?php echo ($num_clients - 3); ?> más
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+
+                <!-- SECCIÓN 3: Clientes sin Trabajador Asignado -->
+                <h3 style="margin-top:30px;">📋 Clientes sin Trabajador Asignado</h3>
+
+                <?php if (empty($unassigned_clients)): ?>
+                    <p style="color:#999; padding:20px; background:#f5f5f5; border-radius:5px; text-align:center;">
+                        ✅ Todos los clientes tienen un trabajador asignado.
+                    </p>
+                <?php else: ?>
+                    <div style="border:1px solid #ddd; border-radius:8px; overflow:hidden;">
+                        <?php foreach ($unassigned_clients as $client): ?>
+                            <?php
+                            $folder_name = intranet_get_client_folder($client->ID, $client->display_name);
+                            ?>
+                            <div class="client-item-gs unassigned-client" style="padding:15px; border-top:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
+                                <div style="flex:1;">
+                                    <a href="?ver_cliente=<?php echo urlencode($folder_name); ?>" style="text-decoration:none; color:#333; font-weight:bold;">
+                                        👤 <?php echo esc_html($client->display_name); ?>
+                                    </a>
+                                    <span style="color:#999; font-size:12px; margin-left:10px;"><?php echo $client->user_email; ?></span>
+                                </div>
+                                <div style="display:flex; gap:10px; align-items:center;">
+                                    <?php if (!empty($workers)): ?>
+                                        <form method="post" style="margin:0; display:flex; gap:8px; align-items:center;" action="<?php echo esc_url(home_url('/customer-area/dashboard/')); ?>">
+                                            <input type="hidden" name="client_id" value="<?php echo $client->ID; ?>">
+                                            <select name="worker_id" required style="padding:6px 12px; border:1px solid #ddd; border-radius:5px; font-size:13px;">
+                                                <option value="">Seleccionar trabajador...</option>
+                                                <?php foreach ($workers as $worker): ?>
+                                                    <option value="<?php echo $worker->ID; ?>"><?php echo esc_html($worker->display_name); ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                            <button type="submit" name="asignar_trabajador" style="background:#2E7D32; color:white; border:none; padding:6px 16px; border-radius:5px; cursor:pointer; font-size:13px;">
+                                                ✓ Asignar
+                                            </button>
+                                        </form>
+                                    <?php endif; ?>
+
+                                    <?php if (!in_array(IG_ROLE_WORKER, $client->roles) && !in_array('administrator', $client->roles)): ?>
+                                        <form method="post" style="margin:0;" action="<?php echo esc_url(home_url('/customer-area/dashboard/')); ?>" onsubmit="return confirm('¿Convertir a <?php echo esc_html($client->display_name); ?> en Trabajador?');">
+                                            <input type="hidden" name="user_id" value="<?php echo $client->ID; ?>">
+                                            <button type="submit" name="promover_trabajador" style="background:#FF9800; color:white; border:none; padding:6px 12px; border-radius:5px; cursor:pointer; font-size:13px;">
+                                                ⬆️ Hacer Trabajador
+                                            </button>
+                                        </form>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
             </div>
-        
+
+            <?php endif; ?>
+
         <?php endif; ?>
         
         </div>
@@ -274,16 +493,54 @@ class AdminUI {
                 }
             }
 
-            // Buscador de clientes
-            function filterClientes() {
+            // Buscador global de trabajadores y clientes
+            function filterAll() {
                 let val = document.getElementById('searchClientGs').value.toLowerCase();
-                let items = document.querySelectorAll('.client-item-gs');
-                items.forEach(item => {
-                    item.style.display = item.innerText.toLowerCase().includes(val) ? "block" : "none";
+
+                // Filtrar secciones de trabajadores
+                let workerSections = document.querySelectorAll('.worker-section');
+                workerSections.forEach(section => {
+                    let hasMatch = section.innerText.toLowerCase().includes(val);
+                    section.style.display = hasMatch ? "block" : "none";
+                });
+
+                // Filtrar clientes sin asignar
+                let unassignedClients = document.querySelectorAll('.unassigned-client');
+                unassignedClients.forEach(item => {
+                    item.style.display = item.innerText.toLowerCase().includes(val) ? "flex" : "none";
                 });
             }
+
+            // Buscador local por trabajador
+            function filterWorkerClients(workerId) {
+                let input = document.querySelector(`.worker-client-search[data-worker="${workerId}"]`);
+                let val = input.value.toLowerCase();
+                let items = document.querySelectorAll(`.worker-${workerId}-client`);
+
+                items.forEach(item => {
+                    item.style.display = item.innerText.toLowerCase().includes(val) ? "flex" : "none";
+                });
+            }
+
+            // Buscador para vista de detalle de clientes del trabajador
+            function filterWorkerDetailClients() {
+                let val = document.getElementById('searchWorkerClients').value.toLowerCase();
+                let items = document.querySelectorAll('.worker-detail-client');
+
+                items.forEach(item => {
+                    item.style.display = item.innerText.toLowerCase().includes(val) ? "flex" : "none";
+                });
+            }
+            
         </script>
-        
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const u = new URLSearchParams(location.search);
+                if (u.has('err')) alert('❌ Error: Duplicado');
+                if (u.get('msg') === 'ok') alert('✅ Subido');
+                history.replaceState({}, '', location.href.replace(/[&?](err|msg)=[^&]*/g, ''));
+            });
+                    
         <?php
         return ob_get_clean();
     }
