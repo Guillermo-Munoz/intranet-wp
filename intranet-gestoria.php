@@ -18,23 +18,46 @@ require_once INTRANET_GESTORIA_PATH . 'includes/autoload.php';
 require_once INTRANET_GESTORIA_PATH . 'includes/constants.php';
 require_once INTRANET_GESTORIA_PATH . 'includes/functions.php';
 
+
+
 // Inicializar plugin
 add_action('plugins_loaded', 'intranet_gestoria_init');
 function intranet_gestoria_init() {
     
+
+     // Acción para procesar las descargas seguras
+   add_action('wp_ajax_ig_descarga', 'intranet_gestoria_procesar_descarga');
+    add_action('wp_ajax_nopriv_ig_descarga', 'intranet_gestoria_procesar_descarga');
+
+    // Registrar el rol de trabajador
+    add_role(
+        IG_ROLE_WORKER,
+        'Trabajador',
+        array(
+            'read' => true,
+            'edit_posts' => false,
+            'delete_posts' => false,
+        )
+    );
+
     // Registrar shortcodes
     add_shortcode('area_cliente_simple', function() {
         return IntranetGestoria\Client\ClientUI::render();
     });
-    
+
     add_shortcode('admin_ver_simple', function() {
         return IntranetGestoria\Admin\AdminUI::render();
     });
-    
+
+    add_shortcode('area_trabajador', function() {
+        return IntranetGestoria\Worker\WorkerUI::render();
+    });
+
     // Procesar acciones POST
     IntranetGestoria\Client\ClientActions::handle();
     IntranetGestoria\Admin\AdminActions::handle();
-    
+    IntranetGestoria\Worker\WorkerActions::handle();
+
     // Menu y UI
     add_filter('show_admin_bar', 'intranet_gestoria_hide_admin_bar');
     add_action('admin_menu', 'intranet_gestoria_custom_menu');
@@ -42,7 +65,7 @@ function intranet_gestoria_init() {
 }
 
 function intranet_gestoria_hide_admin_bar($show) {
-    if (current_user_can('author')) return false;
+    if (current_user_can('author') || ig_is_worker(get_current_user_id())) return false;
     return $show;
 }
 
@@ -65,6 +88,25 @@ function intranet_gestoria_custom_menu() {
             }
         }
     }
+
+    if (ig_is_worker(get_current_user_id())) {
+        global $menu;
+        add_menu_page(
+            'Mis Clientes',
+            '👥 Mis Clientes',
+            'read',
+            'trabajador_clientes',
+            'intranet_gestoria_redirect_worker',
+            'dashicons-groups',
+            1
+        );
+        $permitidos = array('trabajador_clientes', 'profile.php');
+        foreach ($menu as $key => $item) {
+            if (!in_array($item[2], $permitidos)) {
+                unset($menu[$key]);
+            }
+        }
+    }
 }
 
 function intranet_gestoria_redirect() {
@@ -72,32 +114,191 @@ function intranet_gestoria_redirect() {
     exit;
 }
 
+function intranet_gestoria_redirect_worker() {
+    wp_redirect(home_url('/area-trabajador/'));
+    exit;
+}
+
 function intranet_gestoria_menu_items($items, $args) {
     if ($args->theme_location == 'primary-menu' && is_user_logged_in()) {
         $es_gestoria = current_user_can('author');
-        $titulo = $es_gestoria ? 'ADMIN' : 'MI CUENTA';
-        $url = $es_gestoria ? home_url('/dashboard/') : home_url('/customer-area/dashboard/');
-        
+        $es_trabajador = ig_is_worker(get_current_user_id());
+
+        // Determinar título y URL
+        if ($es_gestoria) {
+            $titulo = 'ADMIN';
+            $url = home_url('/dashboard/');
+        } elseif ($es_trabajador) {
+            $titulo = 'TRABAJADOR';
+            $url = home_url('/area-trabajador/');
+        } else {
+            $titulo = 'MI CUENTA';
+            $url = home_url('/customer-area/dashboard/');
+        }
+
         $nuevo_item = '<li class="menu-item menu-item-has-children intranet-icon">
             <a href="' . esc_url($url) . '" style="font-weight:bold; color:#003B77;">
                 <i class="dashicons dashicons-admin-generic" style="margin-right:5px;"></i>' . $titulo . '
             </a>
             <ul class="sub-menu">';
-        
+
         if ($es_gestoria) {
             $nuevo_item .= '<li class="menu-item"><a href="' . home_url('/dashboard/') . '">📊 Panel Gestión</a></li>';
             $nuevo_item .= '<li class="menu-item"><a href="' . admin_url('users.php') . '">👥 Lista Clientes</a></li>';
+        } elseif ($es_trabajador) {
+            $nuevo_item .= '<li class="menu-item"><a href="' . home_url('/area-trabajador/') . '">👥 Mis Clientes</a></li>';
         } else {
             $nuevo_item .= '<li class="menu-item"><a href="' . home_url('/my-files/') . '">📁 Mis Archivos</a></li>';
         }
-        
+
         $nuevo_item .= '<li class="menu-item"><a href="' . wp_logout_url(home_url()) . '" style="color:#cc0000 !important;">🚪 Cerrar Sesión</a></li>';
         $nuevo_item .= '</ul></li>';
-        
+
         $items .= $nuevo_item;
     }
     return $items;
 }
+
+// function intranet_gestoria_procesar_descarga() {
+//     if (!is_user_logged_in()) wp_die("Inicia sesión.");
+
+//     $archivo = isset($_GET['archivo']) ? $_GET['archivo'] : '';
+//     if (empty($archivo)) wp_die("Falta archivo.");
+
+//     $upload_dir = wp_upload_dir();
+//     $base_dir = $upload_dir['basedir'] . '/clientes/';
+//     $full_path = realpath($base_dir . $archivo);
+
+//     if ($full_path === false || strpos($full_path, realpath($base_dir)) !== 0) {
+//         wp_die("Acceso no válido.");
+//     }
+
+//     $user = wp_get_current_user();
+//     $partes = explode('/', $archivo);
+//     $carpeta_cliente = $partes[0]; 
+//     $partes_carpeta = explode('-', $carpeta_cliente);
+//     $id_propietario = isset($partes_carpeta[1]) ? intval($partes_carpeta[1]) : 0;
+
+//     $es_gestor = current_user_can('author') || ig_is_worker($user->ID);
+//     $es_dueno = ($user->ID == $id_propietario);
+
+//     if (file_exists($full_path) && ($es_gestor || $es_dueno)) {
+//         // --- LIMPIEZA CRÍTICA PARA EVITAR EL ERROR DE "NO PERMITIDO" ---
+//         if (ob_get_level()) ob_end_clean(); 
+
+//         $mime = wp_check_filetype($full_path)['type'] ?: 'application/octet-stream';
+        
+//         header('Content-Description: File Transfer');
+//         header('Content-Type: ' . $mime);
+//         header('Content-Disposition: attachment; filename="' . basename($full_path) . '"'); // attachment fuerza la descarga
+//         header('Content-Transfer-Encoding: binary');
+//         header('Content-Length: ' . filesize($full_path));
+//         header('Cache-Control: must-revalidate');
+//         header('Pragma: public');
+        
+//         readfile($full_path);
+//         exit;
+//     }
+//     wp_die("No tienes permiso.");
+// }
+function intranet_gestoria_procesar_descarga() {
+    if (!is_user_logged_in()) wp_die("Inicia sesión.");
+
+    $archivo = isset($_GET['archivo']) ? $_GET['archivo'] : '';
+    if (empty($archivo)) wp_die("Falta archivo.");
+    
+    // Limpiar el archivo: quitar slash inicial si existe
+    $archivo = ltrim($archivo, '/');
+
+    $upload_dir = wp_upload_dir();
+    $base_dir = $upload_dir['basedir'] . '/clientes/';
+    
+    // Construir ruta sin doble slash
+    $ruta_completa = $base_dir . $archivo;
+    
+    // Normalizar la ruta (reemplazar // por /)
+    $ruta_completa = str_replace('//', '/', $ruta_completa);
+    
+    $full_path = realpath($ruta_completa);
+
+    if ($full_path === false || strpos($full_path, realpath($base_dir)) !== 0) {
+        wp_die("Acceso no válido. El archivo no existe en la ruta esperada.");
+    }
+
+    $user = wp_get_current_user();
+    $partes = explode('/', $archivo);
+    $carpeta_cliente = $partes[0]; 
+    
+    // Aquí el problema: el $archivo empieza con "2026" no con "cliente-XX"
+    // Por eso el ID propietario da 0
+    
+    // Verificar si es una carpeta de cliente o no
+    if (strpos($carpeta_cliente, 'cliente-') === 0) {
+        $partes_carpeta = explode('-', $carpeta_cliente);
+        $id_propietario = isset($partes_carpeta[1]) ? intval($partes_carpeta[1]) : 0;
+    } else {
+        // Es una carpeta de año (2026) - permitir acceso solo a gestores
+        $id_propietario = 0;
+    }
+
+    $es_gestor = current_user_can('author') || ig_is_worker($user->ID);
+    $es_dueno = ($user->ID == $id_propietario);
+
+    // Si es carpeta de año, solo gestores pueden acceder
+    if (strpos($carpeta_cliente, 'cliente-') !== 0 && !$es_gestor) {
+        wp_die("No tienes permiso para acceder a archivos del sistema.");
+    }
+
+    if (file_exists($full_path) && ($es_gestor || $es_dueno)) {
+        if (ob_get_level()) ob_end_clean(); 
+
+        $mime = wp_check_filetype($full_path)['type'] ?: 'application/octet-stream';
+        
+        $nombre_archivo = basename($full_path);
+        $nombre_limpio = str_replace('_gs_', '', $nombre_archivo);
+        
+        header('Content-Description: File Transfer');
+        header('Content-Type: ' . $mime);
+        
+        if (isset($_GET['view']) && $_GET['view'] == 1) {
+            header('Content-Disposition: inline; filename="' . $nombre_limpio . '"');
+        } else {
+            header('Content-Disposition: attachment; filename="' . $nombre_limpio . '"');
+        }
+        
+        header('Content-Transfer-Encoding: binary');
+        header('Content-Length: ' . filesize($full_path));
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        
+        readfile($full_path);
+        exit;
+    }
+    wp_die("No tienes permiso.");
+}
+/**
+ * OCULTAR BARRA DE ADMINISTRACIÓN (TANTO EN ADMIN COMO EN WEB)
+ * Mantiene el hueco superior y usa tu lógica de $es_gestor.
+ */
+function ig_quitar_barra() {
+    $user = wp_get_current_user();
+    // Usamos tu comprobación exacta de permisos
+    $es_gestor = current_user_can('author') || ig_is_worker($user->ID);
+    
+    if ($es_gestor) {
+        echo '<style type="text/css">
+            /* Oculta la barra físicamente pero mantiene el espacio */
+            #wpadminbar, .nojq #wpadminbar { 
+                display: none !important; 
+            }
+        </style>';
+    }
+}
+
+// Los ganchos que inyectan el CSS en la cabecera
+add_action('admin_head', 'ig_quitar_barra', 999);
+add_action('wp_head', 'ig_quitar_barra', 999);
+
 
 // Estilos y scripts
 add_action('wp_head', function() {
