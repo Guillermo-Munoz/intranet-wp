@@ -45,36 +45,64 @@ class ClientManager {
                 'author' => $this->getAuthor($item),
             ];
         }
+        // Ordenar por fecha (más reciente primero)
+        usort($result, function($a, $b) {
+            return $b['date'] - $a['date'];
+        });
         return $result;
     }
     
+    // public function deleteFile($file_rel_path) {
+    //     $file_path = realpath($this->base_path . '/' . $file_rel_path);
+        
+    //     // Validar ruta
+    //     if (!$file_path || !FileSecurity::validatePath($file_path, $this->base_path)) {
+    //         return ['success' => false, 'message' => 'Ruta inválida'];
+    //     }
+        
+    //     // No borrar carpeta de año
+    //     if (basename($file_path) === INTRANET_YEAR) {
+    //         return ['success' => false, 'message' => 'No puedes borrar esta carpeta'];
+    //     }
+        
+    //     // No borrar archivos de gestoría
+    //     if (strpos(basename($file_path), '_gs_') === 0) {
+    //         return ['success' => false, 'message' => 'Este archivo está protegido'];
+    //     }
+        
+    //     // Mover a papelera
+    //     try {
+    //         TrashManager::moveToTrash($this->base_path, $file_path, $this->user->display_name);
+    //         return ['success' => true, 'message' => 'Archivo movido a papelera'];
+    //     } catch (Exception $e) {
+    //         return ['success' => false, 'message' => 'Error al borrar'];
+    //     }
+    // }
+    
     public function deleteFile($file_rel_path) {
-        $file_path = realpath($this->base_path . '/' . $file_rel_path);
-        
-        // Validar ruta
-        if (!$file_path || !FileSecurity::validatePath($file_path, $this->base_path)) {
-            return ['success' => false, 'message' => 'Ruta inválida'];
-        }
-        
-        // No borrar carpeta de año
-        if (basename($file_path) === INTRANET_YEAR) {
-            return ['success' => false, 'message' => 'No puedes borrar esta carpeta'];
-        }
-        
-        // No borrar archivos de gestoría
-        if (strpos(basename($file_path), '_gs_') === 0) {
-            return ['success' => false, 'message' => 'Este archivo está protegido'];
-        }
-        
-        // Mover a papelera
-        try {
-            TrashManager::moveToTrash($this->base_path, $file_path, $this->user->display_name);
-            return ['success' => true, 'message' => 'Archivo movido a papelera'];
-        } catch (Exception $e) {
-            return ['success' => false, 'message' => 'Error al borrar'];
-        }
+    $file_path = realpath($this->base_path . '/' . $file_rel_path);
+    
+    if (!$file_path || !FileSecurity::validatePath($file_path, $this->base_path)) {
+        return ['success' => false, 'message' => 'Ruta inválida'];
     }
     
+    $filename = basename($file_path);
+    $author = $this->getAuthor($filename);
+
+    // Si el autor es Sistema o Gestoría, BLOQUEAMOS el borrado
+    if ($author === 'Sistema' || $author === 'Gestoría') {
+        return ['success' => false, 'message' => 'Este elemento está protegido y no se puede borrar.'];
+    }
+    
+    // Si llegamos aquí, es del Cliente y se puede mover a la papelera
+    try {
+        TrashManager::moveToTrash($this->base_path, $file_path, $this->user->display_name);
+        return ['success' => true, 'message' => 'Archivo movido a papelera'];
+    } catch (\Exception $e) {
+        return ['success' => false, 'message' => 'Error al borrar'];
+    }
+}
+
     private function getAuthor($filename) {
         if (strpos($filename, '_gs_') === 0) {
             return 'Gestoría';
