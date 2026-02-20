@@ -1,5 +1,8 @@
 <?php
+
 namespace IntranetGestoria\Utils;
+
+use function ig_get_workers_by_client;
 
 class SendEmail {
     private static $remitente_email = 'no-reply@sgasesores.es';
@@ -23,8 +26,8 @@ class SendEmail {
             $destinatarios = [];
             $admins = get_users(['role' => 'author']);
             foreach ($admins as $admin) { $destinatarios[] = $admin->user_email; }
-            $worker = \ig_get_worker_by_client($client_id);
-            if ($worker) { $destinatarios[] = $worker->user_email; }
+            $workers = ig_get_workers_by_client($client_id);
+            foreach ($workers as $w) { $destinatarios[] = $w->user_email; }
 
             $subject = "📩 Documentación subida por cliente: {$client->display_name}";
             $texto   = "El cliente <strong>{$client->display_name}</strong> ha subido nuevos archivos a su expediente.";
