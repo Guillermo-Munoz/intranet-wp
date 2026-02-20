@@ -104,73 +104,73 @@ class WorkerManager {
         
         return $result;
     }
-/**
- * Elimina un archivo o carpeta (lo mueve a la papelera)
- * @param string $file_rel_path Ruta relativa del archivo
- * @return array Resultado de la operación
- */
-public function deleteFile($file_rel_path) {
-    $file_path = realpath($this->client_base_path . '/' . $file_rel_path);
-    
-    if (!$file_path || !FileSecurity::validatePath($file_path, $this->client_base_path)) {
-        return ['success' => false, 'message' => 'Ruta inválida'];
-    }
-    
-    $filename = basename($file_path);
-    $author = $this->getAuthor($filename);
-    
-    // Si es archivo de sistema, NO se puede borrar
-    if ($author === 'Sistema') {
-        return ['success' => false, 'message' => 'Este elemento es del sistema y no se puede borrar.'];
-    }
-    
-    $user = wp_get_current_user();
-    $username = $user->display_name;
-    $base_dir = INTRANET_CLIENTS_DIR;
-    $ver_cliente = $this->ver_cliente;
-    
-    if (is_dir($file_path)) {
-        // RECURSIVIDAD: Entramos en la carpeta para "desmontarla"
-        $files = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($file_path, \RecursiveDirectoryIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::CHILD_FIRST
-        );
-
-        foreach ($files as $fileinfo) {
-            $item_path = $fileinfo->getRealPath();
+        /**
+         * Elimina un archivo o carpeta (lo mueve a la papelera)
+         * @param string $file_rel_path Ruta relativa del archivo
+         * @return array Resultado de la operación
+         */
+        public function deleteFile($file_rel_path) {
+            $file_path = realpath($this->client_base_path . '/' . $file_rel_path);
             
-            if ($fileinfo->isFile()) {
-                // --- PROTECCIÓN INDEX.PHP ---
-                if ($fileinfo->getFilename() === 'index.php') {
-                    @unlink($item_path); 
-                    continue;
+            if (!$file_path || !FileSecurity::validatePath($file_path, $this->client_base_path)) {
+                return ['success' => false, 'message' => 'Ruta inválida'];
+            }
+            
+            $filename = basename($file_path);
+            $author = $this->getAuthor($filename);
+            
+            // Si es archivo de sistema, NO se puede borrar
+            if ($author === 'Sistema') {
+                return ['success' => false, 'message' => 'Este elemento es del sistema y no se puede borrar.'];
+            }
+            
+            $user = wp_get_current_user();
+            $username = $user->display_name;
+            $base_dir = INTRANET_CLIENTS_DIR;
+            $ver_cliente = $this->ver_cliente;
+            
+            if (is_dir($file_path)) {
+                // RECURSIVIDAD: Entramos en la carpeta para "desmontarla"
+                $files = new \RecursiveIteratorIterator(
+                    new \RecursiveDirectoryIterator($file_path, \RecursiveDirectoryIterator::SKIP_DOTS),
+                    \RecursiveIteratorIterator::CHILD_FIRST
+                );
+
+                foreach ($files as $fileinfo) {
+                    $item_path = $fileinfo->getRealPath();
+                    
+                    if ($fileinfo->isFile()) {
+                        // --- PROTECCIÓN INDEX.PHP ---
+                        if ($fileinfo->getFilename() === 'index.php') {
+                            @unlink($item_path); 
+                            continue;
+                        }
+
+                        // --- ARCHIVOS NORMALES ---
+                        // Calculamos la ruta relativa para el log
+                        $rel_log = str_replace(realpath($base_dir . $ver_cliente) . DIRECTORY_SEPARATOR, '', $item_path);
+                        $rel_log = str_replace('\\', '/', $rel_log);
+
+                        // Enviamos al TrashManager (mueve a papelera + escribe en log)
+                        TrashManager::moveToTrash($base_dir . $ver_cliente . '/', $item_path, $username);
+                    } else {
+                        // Es una subcarpeta vacía, la borramos
+                        @rmdir($item_path);
+                    }
                 }
-
-                // --- ARCHIVOS NORMALES ---
-                // Calculamos la ruta relativa para el log
-                $rel_log = str_replace(realpath($base_dir . $ver_cliente) . DIRECTORY_SEPARATOR, '', $item_path);
-                $rel_log = str_replace('\\', '/', $rel_log);
-
-                // Enviamos al TrashManager (mueve a papelera + escribe en log)
-                TrashManager::moveToTrash($base_dir . $ver_cliente . '/', $item_path, $username);
+                
+                // Registramos la eliminación de la carpeta contenedora en el log
+                \IntranetGestoria\Trash\TrashLogger::registerDeletion($base_dir . $ver_cliente . '/', $file_rel_path, 'CARPETA', $username);
+                @rmdir($file_path); // Borramos la carpeta principal
+                
+                return ['success' => true, 'message' => 'Carpeta movida a papelera'];
+                
             } else {
-                // Es una subcarpeta vacía, la borramos
-                @rmdir($item_path);
+                // Es un archivo suelto
+                TrashManager::moveToTrash($base_dir . $ver_cliente . '/', $file_path, $username);
+                return ['success' => true, 'message' => 'Archivo movido a papelera'];
             }
         }
-        
-        // Registramos la eliminación de la carpeta contenedora en el log
-        \IntranetGestoria\Trash\TrashLogger::registerDeletion($base_dir . $ver_cliente . '/', $file_rel_path, 'CARPETA', $username);
-        @rmdir($file_path); // Borramos la carpeta principal
-        
-        return ['success' => true, 'message' => 'Carpeta movida a papelera'];
-        
-    } else {
-        // Es un archivo suelto
-        TrashManager::moveToTrash($base_dir . $ver_cliente . '/', $file_path, $username);
-        return ['success' => true, 'message' => 'Archivo movido a papelera'];
-    }
-}
 
     /**
      * Obtiene los items de la papelera del cliente
