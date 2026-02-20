@@ -277,30 +277,59 @@ class AdminActions {
     }
 
     private static function handleAssignWorker() {
-        if (!current_user_can('edit_published_posts')) wp_die('Acceso denegado.');
+    if (!current_user_can('edit_published_posts')) wp_die('Acceso denegado.');
+    
+    $client_id = isset($_POST['client_id']) ? intval($_POST['client_id']) : 0;
+    $worker_id = isset($_POST['worker_id']) ? intval($_POST['worker_id']) : 0;
+
+    if (!$client_id || !$worker_id) wp_die('Datos no válidos.');
+    if (!ig_is_worker($worker_id)) wp_die('El trabajador especificado no es válido.');
+
+    ig_assign_worker_to_client($client_id, $worker_id);
+
+    wp_safe_redirect(add_query_arg('msg', 'assigned', home_url('/customer-area/dashboard/')));
+    exit;
+}
+
+private static function handleUnassignWorker() {
+    if (!current_user_can('edit_published_posts')) wp_die('Acceso denegado.');
+    
+    $client_id = isset($_POST['client_id']) ? intval($_POST['client_id']) : 0;
+    $worker_id = isset($_POST['worker_id']) ? intval($_POST['worker_id']) : 0;
+
+    if (!$client_id || !$worker_id) wp_die('Datos no válidos.');
+
+    ig_unassign_worker_from_client($client_id, $worker_id);
+
+    wp_safe_redirect(add_query_arg('msg', 'unassigned', home_url('/customer-area/dashboard/')));
+    exit;
+}
+
+    // private static function handleAssignWorker() {
+    //     if (!current_user_can('edit_published_posts')) wp_die('Acceso denegado.');
         
-        $client_id = isset($_POST['client_id']) ? intval($_POST['client_id']) : 0;
-        $worker_id = isset($_POST['worker_id']) ? intval($_POST['worker_id']) : 0;
+    //     $client_id = isset($_POST['client_id']) ? intval($_POST['client_id']) : 0;
+    //     $worker_id = isset($_POST['worker_id']) ? intval($_POST['worker_id']) : 0;
 
-        if (!$client_id || !$worker_id) wp_die('Datos no válidos.');
+    //     if (!$client_id || !$worker_id) wp_die('Datos no válidos.');
 
-        if (!ig_is_worker($worker_id)) wp_die('El trabajador especificado no es válido.');
+    //     if (!ig_is_worker($worker_id)) wp_die('El trabajador especificado no es válido.');
 
-        update_user_meta($client_id, IG_META_ASSIGNED_WORKER, $worker_id);
+    //     update_user_meta($client_id, IG_META_ASSIGNED_WORKER, $worker_id);
 
-        wp_safe_redirect(add_query_arg('msg', 'assigned', home_url('/customer-area/dashboard/')));
-        exit;
-    }
+    //     wp_safe_redirect(add_query_arg('msg', 'assigned', home_url('/customer-area/dashboard/')));
+    //     exit;
+    // }
 
-    private static function handleUnassignWorker() {
-        if (!current_user_can('edit_published_posts')) wp_die('Acceso denegado.');
+    // private static function handleUnassignWorker() {
+    //     if (!current_user_can('edit_published_posts')) wp_die('Acceso denegado.');
         
-        $client_id = isset($_POST['client_id']) ? intval($_POST['client_id']) : 0;
-        if (!$client_id) wp_die('Cliente no válido.');
+    //     $client_id = isset($_POST['client_id']) ? intval($_POST['client_id']) : 0;
+    //     if (!$client_id) wp_die('Cliente no válido.');
 
-        delete_user_meta($client_id, IG_META_ASSIGNED_WORKER);
+    //     delete_user_meta($client_id, IG_META_ASSIGNED_WORKER);
 
-        wp_safe_redirect(add_query_arg('msg', 'unassigned', home_url('/customer-area/dashboard/')));
-        exit;
-    }
+    //     wp_safe_redirect(add_query_arg('msg', 'unassigned', home_url('/customer-area/dashboard/')));
+    //     exit;
+    // }
 }
