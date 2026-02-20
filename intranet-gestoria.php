@@ -54,10 +54,18 @@ function intranet_gestoria_init() {
     });
 
     // Procesar acciones POST
-    IntranetGestoria\Client\ClientActions::handle();
-    IntranetGestoria\Admin\AdminActions::handle();
-    IntranetGestoria\Worker\WorkerActions::handle();
+    // Cambia esto para 
+    // IntranetGestoria\Client\ClientActions::handle();
+    // IntranetGestoria\Admin\AdminActions::handle();
+    // IntranetGestoria\Worker\WorkerActions::handle();
 
+    // Por esto, FUERA de intranet_gestoria_init():
+    //El hook wp se ejecuta cuando WordPress ya está completamente cargado, todos los plugins activos y WP Mail SMTP listo para enviar. Es el momento correcto para procesar formularios y enviar emails.
+    add_action('wp', function() {
+        IntranetGestoria\Client\ClientActions::handle();
+        IntranetGestoria\Admin\AdminActions::handle();
+        IntranetGestoria\Worker\WorkerActions::handle();
+    });
     // Menu y UI
     add_filter('show_admin_bar', 'intranet_gestoria_hide_admin_bar');
     add_action('admin_menu', 'intranet_gestoria_custom_menu');
