@@ -21,9 +21,10 @@ class AdminUI {
             .breadcrumb-gs { padding: 12px 20px; background: #f8f9fa; border-bottom: 1px solid #eee; font-size: 14px; }
             
             /* Clases de tabla y elementos del cliente */
-            .cl-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            .cl-table { width: 100%; border-collapse: collapse; margin-top: 10px; margin: 0 !important; }
             .cl-table th { background: #f4f7f9; color: #333; text-align: left; padding: 12px; border-bottom: 2px solid #dee2e6; font-size: 13px; }
             .cl-table td { padding: 12px; border-bottom: 1px solid #eee; vertical-align: middle; font-size: 14px; }
+            
             
             .search-cl { width:100%; padding:10px; border:1px solid #ddd; border-radius:5px; margin-bottom:15px; box-sizing: border-box; }
             
@@ -209,9 +210,16 @@ class AdminUI {
             </div>
         
         <?php else: ?>
+           
 
             <?php
-            // Nueva vista: Ver clientes de un trabajador específico
+
+            // ================================================================
+            // BLOQUE SECUNDARIO: Gestión de trabajadores y clientes
+            // Sub-vistas según parámetros GET: ver_trabajador | ver_list_clientes | (ninguno)
+            // ================================================================
+
+            // VISTA 1: Clientes asignados a un trabajador | URL: ?ver_trabajador=ID
             $ver_trabajador = isset($_GET['ver_trabajador']) ? intval($_GET['ver_trabajador']) : null;
 
             if ($ver_trabajador):
@@ -233,30 +241,207 @@ class AdminUI {
                         </p>
                     <?php else: ?>
                         <div style="border:1px solid #ddd; border-radius:8px; overflow:hidden;">
-                            <?php foreach ($assigned_clients as $client): ?>
-                                <?php
-                                $folder_name = intranet_get_client_folder($client->ID, $client->display_name);
-                                ?>
-                                <div class="worker-detail-client" style="padding:15px; border-top:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
-                                    <div style="flex:1;">
-                                        <a href="?ver_cliente=<?php echo urlencode($folder_name); ?>" style="text-decoration:none; color:#333; font-weight:bold;">
-                                            👤 <?php echo esc_html($client->display_name); ?>
-                                        </a>
-                                        <span style="color:#999; font-size:12px; margin-left:10px;"><?php echo $client->user_email; ?></span>
-                                    </div>
-                                    <form method="post" style="margin:0;" action="<?php echo esc_url(home_url('/customer-area/dashboard/')); ?>" onsubmit="return confirm('¿Desvincular este cliente del trabajador?');">
-                                        <input type="hidden" name="client_id" value="<?php echo $client->ID; ?>">
-                                        <button type="submit" name="desvincular_trabajador" style="background:#ffebee; color:#c62828; border:none; padding:6px 12px; border-radius:5px; cursor:pointer; font-size:12px;">
-                                            🔗 Desvincular
-                                        </button>
-                                    </form>
-                                </div>
-                            <?php endforeach; ?>
+                            <table class="cl-table" style="margin-top:0;">
+                                <thead>
+                                    <tr>
+                                        <th>Cliente</th>
+                                        <th>Correo</th>
+                                        <th style="text-align:right;">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($assigned_clients as $client): ?>
+                                        <?php $folder_name = intranet_get_client_folder($client->ID, $client->display_name); ?>
+                                        <tr class="worker-detail-client" style="background-color:#fff;">
+                                            <td style="padding:8px 12px;"><strong><?php echo esc_html($client->display_name); ?></strong></td>
+                                            <td style="padding:8px 12px; color:#999; font-size:12px;"><?php echo esc_html($client->user_email); ?></td>
+                                            <td style="padding:8px 12px; text-align:right;">
+                                                <a href="?ver_cliente=<?php echo urlencode($folder_name); ?>" 
+                                                style="background:#f0f0f0; color:#333; text-decoration:none; padding:5px 12px; border-radius:5px; font-size:12px; border:1px solid #ccc;">
+                                                    📁 Ver archivos
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
                         </div>
                     <?php endif; ?>
                 </div>
 
-            <?php else: ?>
+                
+
+                <?php // ============================================================
+                // VISTA 2: Asignar cliente a un trabajador
+                // URL: ?ver_list_clientes=ID
+                // ============================================================
+                 elseif (isset($_GET['ver_list_clientes'])): ?>
+                <?php
+                $ver_list_clientes = intval($_GET['ver_list_clientes']);
+                $worker_info = get_userdata($ver_list_clientes);
+                // $unassigned_clients = ig_get_unassigned_clients(); Solo clientes sin asignar a ningún trabajador
+                $unassigned_clients = get_users(['role' => 'subscriber']);
+                ?>
+                <div class="gestor-header">
+                    <h3 style="margin:0; color:white;">👤 Asignar Cliente a: <?php echo $worker_info ? esc_html($worker_info->display_name) : 'Trabajador'; ?></h3>
+                    <a href="<?php echo strtok($_SERVER["REQUEST_URI"], '?'); ?>" style="color:#fff; font-size:12px; text-decoration:none; background:rgba(255,255,255,0.1); padding:5px 10px; border-radius:4px;">✕ Cancelar</a>
+                </div>
+                <div style="padding:20px;">
+                    <p>Selecciona los cliente para asignarlo al trabajador:  <strong><?php echo esc_html($worker_info->display_name); ?></strong>:</p>
+                    <input type="text" id="searchAssignClient" class="search-cl" placeholder="🔍 Filtrar clientes..." onkeyup="filterAssignClients()">
+                    <h3 style="margin-top:30px;">👤Clientes</h3>
+                    <div style="border:1px solid #ddd; border-radius:8px; overflow:hidden; background:white;">
+                        <?php if (empty($unassigned_clients)): ?>
+                            <p style="padding:20px; color:#666;">No hay clientes disponibles para asignar.</p>
+                        <?php else: ?>
+                            <table class="cl-table">
+                                <thead>
+                                    <tr>
+                                        <th>Cliente</th>
+                                        <th>Correo</th>
+                                        <th>Asignado al trabajador</th>
+                                        <th style="text-align:center;">Asignado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($unassigned_clients as $client): ?>
+                                        <?php
+                                        $workers_asignados = ig_get_workers_by_client($client->ID);
+                                        $es_este_worker    = !empty(array_filter($workers_asignados, fn($w) => $w->ID == $ver_list_clientes));
+                                        $row_bg     = empty($workers_asignados) ? '#f2fff3' : '#fbf0ce';
+                                        $row_border = empty($workers_asignados) ? '#6dbb65' : '#d4a017';
+                                        ?>
+                                        <tr class="assign-item">
+                                            <td style="background-color:<?php echo $row_bg; ?>; border-top:1px solid <?php echo $row_border; ?>; border-bottom:1px solid <?php echo $row_border; ?>; border-left:1px solid <?php echo $row_border; ?>;"><strong><?php echo esc_html($client->display_name); ?></strong></td>
+                                            <td style="background-color:<?php echo $row_bg; ?>; border-top:1px solid <?php echo $row_border; ?>; border-bottom:1px solid <?php echo $row_border; ?>;"><?php echo esc_html($client->user_email); ?></td>
+                                            <td data-nombres="<?php echo esc_attr(implode(',', array_map(fn($w) => $w->display_name, $workers_asignados))); ?>"
+                                                style="color:#666; background-color:<?php echo $row_bg; ?>; border-top:1px solid <?php echo $row_border; ?>; border-bottom:1px solid <?php echo $row_border; ?>;">
+                                                <?php if (empty($workers_asignados)): ?>
+                                                    <span style="color:#999;">Sin asignar</span>
+                                                <?php else: ?>
+                                                    <div style="display:flex; flex-wrap:wrap; gap:4px;">
+                                                        <?php foreach ($workers_asignados as $w): ?>
+                                                            <span style="background:#f0f0f0; border:1px solid #ddd; border-radius:20px; padding:2px 8px; font-size:11px; white-space:nowrap;">
+                                                                <?php echo esc_html($w->display_name); ?>
+                                                            </span>
+                                                        <?php endforeach; ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td style="text-align:center; background-color:<?php echo $row_bg; ?>; border-top:1px solid <?php echo $row_border; ?>; border-bottom:1px solid <?php echo $row_border; ?>; border-right:1px solid <?php echo $row_border; ?>;">
+                                                <button type="button"
+                                                    class="assign-btn"
+                                                    data-worker="<?php echo $ver_list_clientes; ?>"
+                                                    data-worker-name="<?php echo esc_attr($worker_info->display_name); ?>"
+                                                    data-client="<?php echo $client->ID; ?>"
+                                                    data-action="<?php echo $es_este_worker ? 'desvincular' : 'asignar'; ?>"
+                                                    style="width:22px; height:22px; border:2px solid #555; border-radius:3px; background:<?php echo $es_este_worker ? '#555' : '#fff'; ?>; cursor:pointer; padding:0; display:inline-flex; align-items:center; justify-content:center; font-size:14px; color:#fff; line-height:1;">
+                                                <?php echo $es_este_worker ? '✓' : ''; ?>
+                                            </button>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                   
+                                </tbody>
+                            </table>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <script>
+                    function filterAssignClients() {
+                        let input = document.getElementById('searchAssignClient').value.toLowerCase();
+                        let items = document.querySelectorAll('.assign-item');
+                        items.forEach(item => { item.style.display = item.innerText.toLowerCase().includes(input) ? '' : 'none'; });
+                    }
+
+                    document.addEventListener('click', function(e) {
+                        const btn = e.target.closest('.assign-btn');
+                        if (!btn) return;
+
+                        const workerId   = btn.dataset.worker;
+                        const clientId   = btn.dataset.client;
+                        const accion     = btn.dataset.action;
+                        const workerName = btn.dataset.workerName;
+
+                        // 1. Actualizar visualmente AL INSTANTE
+                        const asignado = accion === 'asignar';
+                        btn.style.background = asignado ? '#555' : '#fff';
+                        btn.textContent = asignado ? '✓' : '';
+                        btn.dataset.action = asignado ? 'desvincular' : 'asignar';
+
+                        const cells = btn.closest('tr').querySelectorAll('td');
+                        const bg     = asignado ? '#fbf0ce' : '#f2fff3';
+                        const border = asignado ? '#d4a017' : '#6dbb65';
+                        cells.forEach((td, i) => {
+                            td.style.backgroundColor = bg;
+                            td.style.borderTop    = `1px solid ${border}`;
+                            td.style.borderBottom = `1px solid ${border}`;
+                            if (i === 0) td.style.borderLeft  = `1px solid ${border}`;
+                            if (i === cells.length - 1) td.style.borderRight = `1px solid ${border}`;
+                        });
+
+                        // Actualizar celda "Asignado a"
+                        const celdaAsignado = cells[2];
+                        const nombresActuales = celdaAsignado.dataset.nombres ? celdaAsignado.dataset.nombres.split(',') : [];
+
+                        if (asignado) {
+                            if (!nombresActuales.includes(workerName)) nombresActuales.push(workerName);
+                        } else {
+                            const idx = nombresActuales.indexOf(workerName);
+                            if (idx > -1) nombresActuales.splice(idx, 1);
+                        }
+
+                        celdaAsignado.dataset.nombres = nombresActuales.join(',');
+
+                        if (nombresActuales.length === 0) {
+                            celdaAsignado.innerHTML = '<span style="color:#999;">Sin asignar</span>';
+                        } else {
+                            celdaAsignado.innerHTML = nombresActuales
+                                .map(n => `<span style="background:#f0f0f0; border:1px solid #ddd; border-radius:20px; padding:2px 8px; font-size:11px; white-space:nowrap;">${n}</span>`)
+                                .join('');
+                            celdaAsignado.style.cssText += 'display:flex; flex-wrap:wrap; gap:4px;';
+                        }
+
+                        // 2. Enviar al servidor en segundo plano
+                        const formData = new FormData();
+                        formData.append('worker_id', workerId);
+                        formData.append('client_id', clientId);
+                        formData.append(accion === 'asignar' ? 'asignar_trabajador' : 'desvincular_trabajador', '1');
+
+                        fetch('<?php echo esc_url(home_url('/customer-area/dashboard/')); ?>', {
+                            method: 'POST',
+                            body: formData
+                        }).then(res => {
+                            if (!res.ok) {
+                                // 3. Si falla, revertir todo
+                                btn.style.background = asignado ? '#fff' : '#555';
+                                btn.textContent = asignado ? '' : '✓';
+                                btn.dataset.action = asignado ? 'asignar' : 'desvincular';
+                                const bgRevert     = asignado ? '#f2fff3' : '#fbf0ce';
+                                const borderRevert = asignado ? '#6dbb65' : '#d4a017';
+                                cells.forEach((td, i) => {
+                                    td.style.backgroundColor = bgRevert;
+                                    td.style.borderTop    = `1px solid ${borderRevert}`;
+                                    td.style.borderBottom = `1px solid ${borderRevert}`;
+                                    if (i === 0) td.style.borderLeft  = `1px solid ${borderRevert}`;
+                                    if (i === cells.length - 1) td.style.borderRight = `1px solid ${borderRevert}`;
+                                });
+                                if (asignado) {
+                                    celdaAsignado.innerHTML = '<span style="color:#999;">Sin asignar</span>';
+                                } else {
+                                    celdaAsignado.innerHTML = workerName;
+                                    celdaAsignado.style.color = '#666';
+                                }
+                            }
+                        });
+                    });
+                    </script>
+
+            <?php else: /* ============================================================
+                VISTA 3: Panel principal - Lista de todos los trabajadores
+                URL: sin parámetros
+                ============================================================ */?>
+                
 
             <div class="gestor-header"><strong>🏢 Gestión de Trabajadores y Clientes</strong></div>
             <div style="padding:20px;">
@@ -297,8 +482,8 @@ class AdminUI {
                 }
                 ?>
 
-                <!-- SECCIÓN 1: Trabajadores SIN clientes -->
-                <h3 style="margin-top:0;">🔵 Trabajadores sin Clientes Asignados</h3>
+                <?php /* <!-- SECCIÓN 1: Trabajadores SIN clientes -->
+                <!-- <h3 style="margin-top:0;">🔵 Trabajadores sin Clientes Asignados</h3>
 
                 <?php if (empty($workers_without_clients)): ?>
                     <p style="color:#999; padding:20px; background:#f5f5f5; border-radius:5px; text-align:center;">
@@ -326,10 +511,10 @@ class AdminUI {
                             </div>
                         <?php endforeach; ?>
                     </div>
-                <?php endif; ?>
+                <?php endif; ?> -->*/ ?>
 
-                <!-- SECCIÓN 2: Trabajadores CON clientes (resumen) -->
-                <h3 style="margin-top:30px;">🟢 Trabajadores con Clientes Asignados</h3>
+                <?php /* <!-- SECCIÓN 2: Trabajadores CON clientes (resumen) -->
+                <!-- <h3 style="margin-top:30px;">Trabajadores</h3>
 
                 <?php if (empty($workers_with_clients)): ?>
                     <p style="color:#999; padding:20px; background:#f5f5f5; border-radius:5px; text-align:center;">
@@ -383,10 +568,77 @@ class AdminUI {
                             </div>
                         </div>
                     <?php endforeach; ?>
+                <?php endif; ?> -->*/ ?>
+
+                <!-- SECCIÓN 2B: Trabajadores CON clientes y sin (resumen) -->
+                 <h3 style="margin-top:30px;">👷 Trabajadores</h3>
+
+                <?php 
+                // Obtener todos los trabajadores, sin importar si tienen clientes
+                $all_workers = ig_get_all_workers_unfiltered(); 
+                ?>
+
+                <?php if (empty($all_workers)): ?>
+                    <p style="color:#999; padding:20px; background:#f5f5f5; border-radius:5px; text-align:center;">
+                        No hay trabajadores registrados.
+                    </p>
+                <?php else: ?>
+                    <?php foreach ($all_workers as $worker): ?>
+                        <?php 
+                        // Obtener clientes asignados a este trabajador
+                        $clients = ig_get_clients_by_worker($worker->ID); 
+                        $num_clients = count($clients);
+                        ?>
+                        <div class="worker-section-summary" style="margin-bottom:20px; border:1px solid #ddd; border-radius:8px; overflow:hidden;">
+                            <div style="background:#2E7D32; color:white; padding:15px; display:flex; justify-content:space-between; align-items:center;">
+                                <div style="flex:1;">
+                                    <strong>👷 <?php echo esc_html($worker->display_name); ?></strong>
+                                    <span style="background:rgba(255,255,255,0.2); padding:4px 12px; border-radius:20px; font-size:12px; margin-left:10px;">
+                                        <?php echo $num_clients . ' ' . ($num_clients === 1 ? 'cliente' : 'clientes'); ?>
+                                    </span>
+                                </div>
+                                <div style="display:flex; gap:10px; align-items:center;">
+                                    <a href="?ver_list_clientes=<?php echo $worker->ID; ?>"style="background:#fff; color:#2E7D32; text-decoration:none; padding:8px 16px; border-radius:5px; font-size:13px; font-weight:bold;">
+                                        👤 Añadir cliente
+                                    </a>
+
+                                    <a href="?ver_trabajador=<?php echo $worker->ID; ?>" style="background:#fff; color:#2E7D32; text-decoration:none; padding:8px 16px; border-radius:5px; font-size:13px; font-weight:bold;">
+                                        📋 Ver Todos los Clientes
+                                    </a>
+                                     <?php /* <form method="post" style="margin:0; display:inline-block;" action="<?php echo esc_url(home_url('/customer-area/dashboard/')); ?>" onsubmit="return confirm('¿Degradar <?php echo esc_html($worker->display_name); ?> a Cliente? Se perderán sus asignaciones.');">
+                                        <input type="hidden" name="worker_id" value="<?php echo $worker->ID; ?>">
+                                        <button type="submit" name="degradar_trabajador" style="background:#FF6B6B; color:white; border:none; padding:8px 14px; border-radius:5px; cursor:pointer; font-size:13px; font-weight:bold; white-space:nowrap;">
+                                            ⬇️ Degradar
+                                        </button>
+                                    </form>*/ ?>
+                                </div>
+                            </div>
+
+                            <div style="padding:15px; background:#fafafa;">
+                                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                                    <?php 
+                                    // Mostrar primeros 3 clientes como preview
+                                    $preview_clients = array_slice($clients, 0, 3); 
+                                    foreach ($preview_clients as $client): 
+                                    ?>
+                                        <span style="background:#fff; border:1px solid #ddd; padding:6px 12px; border-radius:20px; font-size:12px;">
+                                            👤 <?php echo esc_html($client->display_name); ?>
+                                        </span>
+                                    <?php endforeach; ?>
+                                    <?php if ($num_clients > 3): ?>
+                                        <span style="background:#e3f2fd; border:1px solid #90caf9; padding:6px 12px; border-radius:20px; font-size:12px; color:#1976d2;">
+                                            +<?php echo ($num_clients - 3); ?> más
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
                 <?php endif; ?>
 
-                <!-- SECCIÓN 3: Clientes sin Trabajador Asignado -->
-                <h3 style="margin-top:30px;">📋 Clientes sin Trabajador Asignado</h3>
+
+                <?php /* <!-- SECCIÓN 3: Clientes sin Trabajador Asignado -->
+                <!-- <h3 style="margin-top:30px;">📋 Clientes sin Trabajador Asignado</h3>
 
                 <?php if (empty($unassigned_clients)): ?>
                     <p style="color:#999; padding:20px; background:#f5f5f5; border-radius:5px; text-align:center;">
@@ -433,7 +685,7 @@ class AdminUI {
                             </div>
                         <?php endforeach; ?>
                     </div>
-                <?php endif; ?>
+                <?php endif; ?> -->*/ ?>
             </div>
 
             <?php endif; ?>
@@ -498,7 +750,7 @@ class AdminUI {
                 let val = document.getElementById('searchClientGs').value.toLowerCase();
 
                 // Filtrar secciones de trabajadores
-                let workerSections = document.querySelectorAll('.worker-section');
+                let workerSections = document.querySelectorAll('.worker-section-summary');
                 workerSections.forEach(section => {
                     let hasMatch = section.innerText.toLowerCase().includes(val);
                     section.style.display = hasMatch ? "block" : "none";
@@ -540,7 +792,7 @@ class AdminUI {
                 if (u.get('msg') === 'ok') alert('✅ Subido');
                 history.replaceState({}, '', location.href.replace(/[&?](err|msg)=[^&]*/g, ''));
             });
-                    
+        </script>         
         <?php
         return ob_get_clean();
     }
