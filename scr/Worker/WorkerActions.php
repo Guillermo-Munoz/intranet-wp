@@ -3,7 +3,7 @@ namespace IntranetGestoria\Worker;
 
 use IntranetGestoria\File\FileSecurity;
 use IntranetGestoria\Trash\TrashManager;
-
+use IntranetGestoria\Utils\SendEmail;
 class WorkerActions {
 
     public static function handle() {
@@ -41,66 +41,118 @@ class WorkerActions {
         }
     }
 
-    private static function handleUpload($manager, $ver_cliente) {
-        require_once(ABSPATH . 'wp-admin/includes/file.php');
+    // private static function handleUpload($manager, $ver_cliente) {
+    //     require_once(ABSPATH . 'wp-admin/includes/file.php');
 
-        $base_dir = INTRANET_CLIENTS_DIR;
-        $sub_actual = isset($_GET['dir']) ? sanitize_text_field($_GET['dir']) : '';
-        $paths = isset($_POST['rutas_relativas']) ? explode('|', $_POST['rutas_relativas']) : [];
+    //     $base_dir = INTRANET_CLIENTS_DIR;
+    //     $sub_actual = isset($_GET['dir']) ? sanitize_text_field($_GET['dir']) : '';
+    //     $paths = isset($_POST['rutas_relativas']) ? explode('|', $_POST['rutas_relativas']) : [];
 
-        foreach ($_FILES['archivo_gestor']['name'] as $key => $name) {
-            if ($_FILES['archivo_gestor']['error'][$key] !== UPLOAD_ERR_OK) continue;
+    //     foreach ($_FILES['archivo_gestor']['name'] as $key => $name) {
+    //         if ($_FILES['archivo_gestor']['error'][$key] !== UPLOAD_ERR_OK) continue;
 
-            $file_name = FileSecurity::sanitizeFilename($name);
-            if (!FileSecurity::validateExtension($file_name)) continue;
+    //         $file_name = FileSecurity::sanitizeFilename($name);
+    //         if (!FileSecurity::validateExtension($file_name)) continue;
 
-            $extra_path = '';
-            if (!empty($paths[$key]) && strpos($paths[$key], '/') !== false) {
-                $partes_ruta = explode('/', dirname($paths[$key]));
-                $partes_protegidas = array_map(function($folder) {
-                    return (strpos($folder, '_gs_') === 0) ? $folder : '_gs_' . $folder;
-                }, $partes_ruta);
-                $extra_path = '/' . implode('/', $partes_protegidas);
-            }
+    //         $extra_path = '';
+    //         if (!empty($paths[$key]) && strpos($paths[$key], '/') !== false) {
+    //             $partes_ruta = explode('/', dirname($paths[$key]));
+    //             $partes_protegidas = array_map(function($folder) {
+    //                 return (strpos($folder, '_gs_') === 0) ? $folder : '_gs_' . $folder;
+    //             }, $partes_ruta);
+    //             $extra_path = '/' . implode('/', $partes_protegidas);
+    //         }
 
-            $target_dir = rtrim($base_dir . $ver_cliente . '/' . ltrim($sub_actual, '/'), '/') . $extra_path;
+    //         $target_dir = rtrim($base_dir . $ver_cliente . '/' . ltrim($sub_actual, '/'), '/') . $extra_path;
 
-            if (!file_exists($target_dir)) {
-                wp_mkdir_p($target_dir);
-                file_put_contents($target_dir . '/index.php', '<?php // Privado');
-            }
+    //         if (!file_exists($target_dir)) {
+    //             wp_mkdir_p($target_dir);
+    //             file_put_contents($target_dir . '/index.php', '<?php // Privado');
+    //         }
 
-            // El archivo lleva prefijo _gs_ porque lo sube el Trabajador
-            $final_name = (strpos($file_name, '_gs_') === 0) ? $file_name : '_gs_' . $file_name;
-            $dest = rtrim($target_dir, '/') . '/' . $final_name;
+    //         // El archivo lleva prefijo _gs_ porque lo sube el Trabajador
+    //         $final_name = (strpos($file_name, '_gs_') === 0) ? $file_name : '_gs_' . $file_name;
+    //         $dest = rtrim($target_dir, '/') . '/' . $final_name;
 
-            // Evitar sobreescribir si ya existe
-            if (file_exists($dest)) {
-                $dest = rtrim($target_dir, '/') . '/' . time() . '-' . $final_name;
-            }
+    //         // Evitar sobreescribir si ya existe
+    //         if (file_exists($dest)) {
+    //             $dest = rtrim($target_dir, '/') . '/' . time() . '-' . $final_name;
+    //         }
 
-            move_uploaded_file($_FILES['archivo_gestor']['tmp_name'][$key], $dest);
+    //         move_uploaded_file($_FILES['archivo_gestor']['tmp_name'][$key], $dest);
+    //     }
+
+    // wp_safe_redirect($_SERVER['REQUEST_URI']);
+    //     exit;
+    // }
+
+     private static function handleUpload($manager, $ver_cliente) {
+    require_once(ABSPATH . 'wp-admin/includes/file.php');
+    
+    $base_dir    = INTRANET_CLIENTS_DIR;
+    $sub_actual  = isset($_GET['dir']) ? sanitize_text_field($_GET['dir']) : '';
+    $paths       = isset($_POST['rutas_relativas']) ? explode('|', $_POST['rutas_relativas']) : [];
+    
+    $archivos_subidos = [];
+
+    foreach ($_FILES['archivo_gestor']['name'] as $key => $name) {
+        if ($_FILES['archivo_gestor']['error'][$key] !== UPLOAD_ERR_OK) continue;
+
+        $file_name = FileSecurity::sanitizeFilename($name);
+        if (!FileSecurity::validateExtension($file_name)) continue;
+
+        $extra_path = '';
+        if (!empty($paths[$key]) && strpos($paths[$key], '/') !== false) {
+            $partes_ruta = explode('/', dirname($paths[$key]));
+            $partes_protegidas = array_map(function($folder) {
+                return (strpos($folder, '_gs_') === 0) ? $folder : '_gs_' . $folder;
+            }, $partes_ruta);
+            $extra_path = '/' . implode('/', $partes_protegidas);
         }
 
-        // Enviar email al cliente notificando la subida
-        $partes = explode('-', $ver_cliente);
-        $client_id = $partes[1] ?? 0;
-        $client = get_userdata($client_id);
+        $target_dir = rtrim($base_dir . $ver_cliente . '/' . ltrim($sub_actual, '/'), '/') . $extra_path;
 
-        if ($client && $client->user_email) {
-            $worker = wp_get_current_user();
-            $subject = 'Nuevos documentos subidos a tu expediente';
-            $message = "Hola {$client->display_name},\n\n";
-            $message .= "Tu trabajador asignado {$worker->display_name} ha subido nuevos documentos a tu expediente.\n\n";
-            $message .= "Puedes acceder a tu área de cliente para revisarlos.\n\n";
-            $message .= "Saludos,\nGestoría";
-
-            wp_mail($client->user_email, $subject, $message);
+        if (!file_exists($target_dir)) {
+            wp_mkdir_p($target_dir);
+            file_put_contents($target_dir . '/index.php', '<?php // Privado');
         }
 
-        wp_safe_redirect($_SERVER['REQUEST_URI']);
-        exit;
+        $final_name = (strpos($file_name, '_gs_') === 0) ? $file_name : '_gs_' . $file_name;
+        $dest = rtrim($target_dir, '/') . '/' . $final_name;
+
+        if (file_exists($dest)) {
+            $dest = rtrim($target_dir, '/') . '/' . time() . '-' . $final_name;
+        }
+
+        if (move_uploaded_file($_FILES['archivo_gestor']['tmp_name'][$key], $dest)) {
+            $archivos_subidos[] = $dest;
+        }
     }
+
+       
+    // Enviar email al cliente notificando la subida
+    if (!empty($archivos_subidos)) {
+        $partes    = explode('-', $ver_cliente);
+        $client_id = intval($partes[1] ?? 0);
+
+        if ($client_id > 0) {
+            $current_uid = get_current_user_id();
+
+            if (user_can($current_uid, 'administrator')) {
+                $quien = 'admin';
+            } elseif (\ig_is_worker($current_uid)) {
+                $quien = 'trabajador';
+            } else {
+                $quien = 'cliente';
+            }
+
+            SendEmail::enviar_notificacion($client_id, $quien);
+        }
+    }
+
+    wp_safe_redirect($_SERVER['REQUEST_URI']);
+    exit;
+}
 
     private static function handleDelete($manager, $ver_cliente) {
         $ruta_relativa = sanitize_text_field($_POST['ruta_archivo']);
