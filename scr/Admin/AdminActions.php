@@ -3,6 +3,7 @@ namespace IntranetGestoria\Admin;
 
 use IntranetGestoria\File\FileSecurity;
 use IntranetGestoria\Trash\TrashManager;
+use IntranetGestoria\Utils\SendEmail;
 
 
 class AdminActions {
@@ -53,69 +54,77 @@ class AdminActions {
         }
     }
     
-        private static function handleUpload($manager, $ver_cliente) {
-        require_once(ABSPATH . 'wp-admin/includes/file.php');
-        $base_dir = INTRANET_CLIENTS_DIR;
-        $sub_actual = isset($_POST['dir']) ? sanitize_text_field($_POST['dir']) : '';
+       private static function handleUpload($manager, $ver_cliente) {
+    require_once(ABSPATH . 'wp-admin/includes/file.php');
+    $base_dir = INTRANET_CLIENTS_DIR;
+    $sub_actual = isset($_POST['dir']) ? sanitize_text_field($_POST['dir']) : '';
+    
+    if (!isset($_FILES['archivo_gestor'])) return;
+
+    $rutas_string = isset($_POST['rutas_relativas']) ? sanitize_text_field($_POST['rutas_relativas']) : '';
+    $rutas_relativas = !empty($rutas_string) ? explode('|', $rutas_string) : [];
+
+    $hay_subida_exitosa = false;
+
+    foreach ($_FILES['archivo_gestor']['name'] as $key => $name) {
+        if ($_FILES['archivo_gestor']['error'][$key] !== UPLOAD_ERR_OK) continue;
         
-        if (!isset($_FILES['archivo_gestor'])) return;
+        $info_ruta = (!empty($rutas_relativas[$key])) ? $rutas_relativas[$key] : $name;
+        $partes_ruta = explode('/', ltrim($info_ruta, '/'));
+        $partes_finales = [];
 
-        $rutas_string = isset($_POST['rutas_relativas']) ? sanitize_text_field($_POST['rutas_relativas']) : '';
-        $rutas_relativas = !empty($rutas_string) ? explode('|', $rutas_string) : [];
-
-        foreach ($_FILES['archivo_gestor']['name'] as $key => $name) {
-            if ($_FILES['archivo_gestor']['error'][$key] !== UPLOAD_ERR_OK) continue;
-            
-            $info_ruta = (!empty($rutas_relativas[$key])) ? $rutas_relativas[$key] : $name;
-            
-            // 1. Procesar la ruta por partes (Carpetas y Archivo)
-            $partes_ruta = explode('/', ltrim($info_ruta, '/'));
-            $partes_finales = [];
-
-            foreach ($partes_ruta as $index => $segmento) {
-                // Sanitizamos el segmento primero para limpiar caracteres raros
-                $segmento_limpio = FileSecurity::sanitizeFilename($segmento);
-                
-                // Forzamos el prefijo _gs_ si no lo tiene
-                // Usamos ltrim para evitar gs_ o _gs__gs_
-                $prefijo = '_gs_';
-                $segmento_con_prefijo = $prefijo . ltrim($segmento_limpio, '_gs_');
-                
-                $partes_finales[] = $segmento_con_prefijo;
-            }
-
-            // El último elemento es el nombre del archivo
-            $final_file_name = end($partes_finales);
-            
-            // Los elementos anteriores son la estructura de subcarpetas
-            array_pop($partes_finales); 
-            $sub_carpeta_archivo = implode('/', $partes_finales);
-
-            // 2. Construir la ruta de destino final
-            $target_dir = rtrim($base_dir . $ver_cliente . '/' . ltrim($sub_actual, '/'), '/');
-            
-            if (!empty($sub_carpeta_archivo)) {
-                $target_dir .= '/' . ltrim($sub_carpeta_archivo, '/');
-            }
-
-            $dest = $target_dir . '/' . $final_file_name;
-            
-            // 3. Crear carpetas y añadir protección index.php
-            if (!file_exists($target_dir)) {
-                wp_mkdir_p($target_dir);
-                // Aseguramos protección en toda la nueva ruta creada
-                self::ensureIndexInPath($base_dir . $ver_cliente . '/' . ltrim($sub_actual, '/'), $sub_carpeta_archivo);
-            }
-            
-            // 4. Mover el archivo
-            move_uploaded_file($_FILES['archivo_gestor']['tmp_name'][$key], $dest);
+        foreach ($partes_ruta as $segmento) {
+            $segmento_limpio = FileSecurity::sanitizeFilename($segmento);
+            $partes_finales[] = '_gs_' . ltrim($segmento_limpio, '_gs_');
         }
-        
-        $url = home_url('/customer-area/dashboard/?ver_cliente=' . $ver_cliente);
-        if (!empty($sub_actual)) $url = add_query_arg('dir', urlencode($sub_actual), $url);
-        wp_safe_redirect($url);
-        exit;
+
+        $final_file_name = end($partes_finales);
+        array_pop($partes_finales);
+        $sub_carpeta_archivo = implode('/', $partes_finales);
+
+        $target_dir = rtrim($base_dir . $ver_cliente . '/' . ltrim($sub_actual, '/'), '/');
+        if (!empty($sub_carpeta_archivo)) {
+            $target_dir .= '/' . ltrim($sub_carpeta_archivo, '/');
+        }
+
+        $dest = $target_dir . '/' . $final_file_name;
+
+        if (!file_exists($target_dir)) {
+            wp_mkdir_p($target_dir);
+            self::ensureIndexInPath($base_dir . $ver_cliente . '/' . ltrim($sub_actual, '/'), $sub_carpeta_archivo);
+        }
+
+        if (move_uploaded_file($_FILES['archivo_gestor']['tmp_name'][$key], $dest)) {
+            $hay_subida_exitosa = true;
+        }
     }
+
+    // Enviar email al cliente notificando la subida
+    if ($hay_subida_exitosa) {
+        $partes    = explode('-', $ver_cliente);
+        $client_id = intval($partes[1] ?? 0);
+
+        if ($client_id > 0) {
+            $current_uid = get_current_user_id();
+
+            if (user_can($current_uid, 'author')) {
+                $quien = 'admin';
+            } elseif (\ig_is_worker($current_uid)) {
+                $quien = 'trabajador';
+            } else {
+                $quien = 'cliente';
+            }
+
+            SendEmail::enviar_notificacion($client_id, $quien);
+        }
+    }
+
+    $url = home_url('/customer-area/dashboard/?ver_cliente=' . $ver_cliente);
+    if (!empty($sub_actual)) $url = add_query_arg('dir', urlencode($sub_actual), $url);
+
+    wp_safe_redirect($url);
+    exit;
+}
 
     /**
      * Asegura que cada subcarpeta nueva creada tenga su archivo index.php
