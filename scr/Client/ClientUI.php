@@ -74,7 +74,8 @@ class ClientUI {
                                     </a>
                                 <?php endif; ?>
                             </td>
-                            <td><?php echo date('d/m/Y H:i', $file['date']); ?></td>
+                            <td><?php echo date('d-m-Y H:i', $file['date']); ?></td>      
+
                             <td><span class="badge-autor badge-<?php echo strtolower($file['author']); ?>"><?php echo $file['author']; ?></span></td>
                             <td style="text-align:right;">
                             <div style="display:flex; gap:8px; justify-content:flex-end; align-items:center;">
