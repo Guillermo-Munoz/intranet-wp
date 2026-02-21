@@ -80,24 +80,26 @@ class ClientUI {
                             <td style="text-align:right;">
                             <div style="display:flex; gap:8px; justify-content:flex-end; align-items:center;">
                                 
+                                <!-- DESCARGA — solo archivos, placeholder invisible para carpetas -->
                                 <?php if (!$file['is_dir']): ?>
                                     <a href="<?php echo admin_url('admin-ajax.php?action=ig_descarga&archivo=' . urlencode($manager->getIdCarpeta() . '/' . $file['rel_path'])); ?>" 
                                     download class="btn-accion-circular" title="Descargar">📥</a>
+                                <?php else: ?>
+                                    <div style="width:32px;"></div>
                                 <?php endif; ?>
 
+                                <!-- BORRAR o CANDADO -->
                                 <?php 
-                                // Identificamos el autor basándonos en tu jerarquía de tres
                                 $es_sistema  = ($file['name'] === INTRANET_YEAR);
                                 $es_gestoria = (strpos($file['name'], '_gs_') === 0);
                                 
-                                // Si NO es sistema y NO es gestoria, entonces es CLIENTE (puede borrar)
                                 if (!$es_sistema && !$es_gestoria): ?>
                                     <form method="post" style="margin:0;" onsubmit="if(confirm('¿Eliminar?')) { document.getElementById('loading-cl').style.display='flex'; return true; } return false;">
                                         <input type="hidden" name="ruta_archivo" value="<?php echo esc_attr($file['rel_path']); ?>">
                                         <button type="submit" name="borrar_archivo_cliente" class='btn-accion-circular-borrar'>×</button>
                                     </form>
                                 <?php else: ?>
-                                    <div style="opacity:0.3; cursor:help;" title="<?php echo $es_sistema ? 'Carpeta de Sistema' : 'Protegido por Gestoría'; ?>">🔒</div>
+                                    <div style="width:32px; height:32px; display:flex; align-items:center; justify-content:center; opacity:0.3; cursor:help;" title="<?php echo $es_sistema ? 'Carpeta de Sistema' : 'Protegido por Gestoría'; ?>">🔒</div>
                                 <?php endif; ?>
 
                             </div>
