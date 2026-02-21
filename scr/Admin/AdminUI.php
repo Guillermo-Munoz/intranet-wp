@@ -118,7 +118,10 @@ class AdminUI {
                         
                         preg_match('/(\d{4}-\d{2}-\d{2})_(\d{2}-\d{2}-\d{2})_(.*)/', $item, $matches);
                         $nombre = isset($matches[3]) ? $matches[3] : $item;
-                        $fecha = isset($matches[1]) ? $matches[1] . ' ' . str_replace('-', ':', $matches[2]) : date('d/m/Y H:i', filemtime($item_full));
+                        // $fecha = isset($matches[1]) ? $matches[1] . ' ' . str_replace('-', ':', $matches[2]) : date('d/m/Y H:i', filemtime($item_full));
+                        $fecha = isset($matches[1]) 
+                        ? date('d-m-Y', strtotime($matches[1])) . ' ' . str_replace('-', ':', $matches[2])
+                        : date('d-m-Y H:i', filemtime($item_full));
                         
                         echo '<tr>';
                         echo '<td>'. ($es_carpeta ? '📁' : '📄') . ' <span class="badge-autor badge-papelera">'. esc_html($nombre) . '</span></td>';
@@ -180,7 +183,8 @@ class AdminUI {
                                         </a>
                                     <?php endif; ?>
                                 </td>
-                                <td><?php echo date('d/m/Y H:i', $file['date']); ?></td>
+                                <td><?php echo date('d-m-Y H:i', $file['date']); ?></td>      
+
                                 
                                 <td>
                                     <?php $autor_final = ($file['is_dir'] || $file['name'] === INTRANET_YEAR) ? 'Sistema' : $file['author']; ?>

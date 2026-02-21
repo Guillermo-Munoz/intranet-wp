@@ -4,11 +4,20 @@ namespace IntranetGestoria\Worker;
 class WorkerUI {
 
     public static function render() {
+        // ============================================================
+        // CONTROL DE ACCESO — Solo trabajadores pueden entrar
+        // ============================================================
         // Verificar que el usuario actual es un trabajador
         if (!ig_is_worker(get_current_user_id())) {
             return '<p>Acceso denegado. Solo trabajadores pueden acceder a esta área.</p>';
         }
 
+        // ============================================================
+        // PARÁMETROS GET — Determinan qué vista mostrar
+        // $ver_cliente  → carpeta del cliente (ej: cliente-8-pepe-prueba)
+        // $ver_auditar  → mostrar papelera en lugar de documentos activos
+        // $sub_actual   → subdirectorio dentro del cliente
+        // ============================================================
         $worker_id = get_current_user_id();
         $ver_cliente = isset($_GET['ver_cliente']) ? sanitize_text_field($_GET['ver_cliente']) : null;
         $ver_auditar = isset($_GET['auditar']) && $_GET['auditar'] === '1' ? true : false;
@@ -16,6 +25,9 @@ class WorkerUI {
 
         ob_start();
         ?>
+         <!-- ============================================================
+             ESTILOS — Misma línea visual que AdminUI pero en verde
+        ============================================================ -->
         <style>
             /* ESTILOS IGUALES A ADMIN */
             .gestor-container { max-width: 1000px; margin: 20px auto; font-family: sans-serif; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background: #fff; border: 1px solid #ddd; }
@@ -59,10 +71,19 @@ class WorkerUI {
         </div>
 
         <div class="gestor-container">
+       
 
-        <?php if ($ver_cliente): ?>
+        <?php
+        // ============================================================
+        // BIFURCACIÓN PRINCIPAL
+        // VISTA A → $ver_cliente presente: gestión de archivos del cliente
+        // VISTA B → sin parámetros: lista de clientes asignados
+        // ============================================================ 
+        
+        if ($ver_cliente): ?>
 
             <?php
+            // --- Cargar manager y verificar que el trabajador tiene acceso ---
             $manager = new WorkerManager($worker_id, $ver_cliente);
             $client = $manager->getClientInfo();
 
@@ -77,11 +98,13 @@ class WorkerUI {
             $files = $manager->getFiles($sub_actual);
             ?>
 
+            <!-- CABECERA CON NOMBRE DEL CLIENTE -->
             <div class="gestor-header">
                 <h3 style="margin:0; color:white;">📂 Gestión: <?php echo esc_html($client->display_name); ?></h3>
                 <a href="<?php echo strtok($_SERVER["REQUEST_URI"], '?'); ?>" style="color:#fff; font-size:12px; text-decoration:none; background:rgba(255,255,255,0.1); padding:5px 10px; border-radius:4px;">✕ Volver</a>
             </div>
 
+            <!-- TABS: Documentos Activos / Papelera -->
             <div style="padding: 0 20px;">
                 <div class="audit-tab-buttons">
                     <button class="audit-tab-btn <?php echo !$ver_auditar ? 'active' : ''; ?>" onclick="window.location='?ver_cliente=<?php echo urlencode($ver_cliente); ?>'">
@@ -93,6 +116,7 @@ class WorkerUI {
                 </div>
             </div>
 
+            <!-- BREADCRUMB — navegación por subcarpetas -->
             <div class="breadcrumb-gs">
                 📍 <a href="?ver_cliente=<?php echo $ver_cliente; echo $ver_auditar ? '&auditar=1' : ''; ?>">Inicio</a>
                 <?php
@@ -110,7 +134,13 @@ class WorkerUI {
 
             <div style="padding:20px;">
 
-            <?php if ($ver_auditar): ?>
+            <?php
+            // ============================================================
+            // VISTA A1 — PAPELERA DE AUDITORÍA
+            // Muestra archivos eliminados con opción de borrado permanente
+            // ============================================================ 
+            
+            if ($ver_auditar): ?>
 
                 <h4 style="color: #c62828; margin-top: 0;">🗑️ Archivos Eliminados</h4>
 
@@ -138,7 +168,10 @@ class WorkerUI {
 
                         preg_match('/(\d{4}-\d{2}-\d{2})_(\d{2}-\d{2}-\d{2})_(.*)/', $item, $matches);
                         $nombre = isset($matches[3]) ? $matches[3] : $item;
-                        $fecha = isset($matches[1]) ? $matches[1] . ' ' . str_replace('-', ':', $matches[2]) : date('d/m/Y H:i', filemtime($item_full));
+                        // $fecha = isset($matches[1]) ? $matches[1] . ' ' . str_replace('-', ':', $matches[2]) : date('d/m/Y H:i', filemtime($item_full));
+                       $fecha = isset($matches[1]) 
+                       ? date('d-m-Y', strtotime($matches[1])) . ' ' . str_replace('-', ':', $matches[2])
+                       : date('d-m-Y H:i', filemtime($item_full));
 
                         echo '<tr>';
                         echo '<td>'. ($es_carpeta ? '📁' : '📄') . ' <span class="badge-autor badge-papelera">'. esc_html($nombre) . '</span></td>';
@@ -162,10 +195,16 @@ class WorkerUI {
                 }
                 ?>
 
-            <?php else: ?>
+            <?php
+            // ============================================================
+            // VISTA A2 — DOCUMENTOS ACTIVOS
+            // Drop zone para subir + tabla de archivos con acciones
+            // ============================================================
+            else: ?>
 
                 <input type="text" id="searchFileCl" class="search-cl" placeholder="🔍 Buscar por nombre..." onkeyup="filterCl()">
 
+                <!-- FORMULARIO DE SUBIDA — el JS gestiona drag&drop y submit -->
                 <form method="post" enctype="multipart/form-data" id="formCl">
                     <input type="hidden" name="rutas_relativas" id="rutas_relativas_cl">
                     <div class="drop-zone-cl" id="dropZoneCl">
@@ -175,6 +214,7 @@ class WorkerUI {
                     </div>
                 </form>
 
+                <!-- TABLA DE ARCHIVOS -->
                 <table class="cl-table" id="tablaArchivos">
                     <thead>
                         <tr>
@@ -196,7 +236,7 @@ class WorkerUI {
                                     </a>
                                 <?php endif; ?>
                             </td>
-                            <td><?php echo date('d/m/Y H:i', $file['date']); ?></td>
+                            <td><?php echo date('d-m-Y H:i', $file['date']); ?></td>      
                             <td><span class="badge-autor badge-<?php echo strtolower($file['author']); ?>"><?php echo $file['author']; ?></span></td>
                             <td style="text-align:right;">
                                 <div style="display:flex; gap:8px; justify-content:flex-end;">
@@ -219,7 +259,12 @@ class WorkerUI {
 
             </div>
 
-        <?php else: ?>
+        <?php
+        // ============================================================
+        // VISTA B — LISTA DE CLIENTES ASIGNADOS AL TRABAJADOR
+        // Punto de entrada principal cuando no hay ?ver_cliente
+        // ============================================================
+         else: ?>
 
             <div class="gestor-header"><strong>👥 Mis Clientes Asignados</strong></div>
             <div style="padding:20px;">
@@ -248,6 +293,10 @@ class WorkerUI {
         </div>
 
         <script>
+            // ============================================================
+            // DRAG & DROP — Subida de archivos y carpetas completas
+            // traverseCl recorre recursivamente carpetas arrastradas
+            // ============================================================
             const dzCl = document.getElementById('dropZoneCl');
             const inCl = document.getElementById('inputCl');
             const formCl = document.getElementById('formCl');
@@ -276,6 +325,7 @@ class WorkerUI {
                 };
             }
 
+            // Buscador de archivos en tabla
             async function traverseCl(item, path, dt, paths) {
                 if (item.isFile) {
                     const file = await new Promise(res => item.file(res));
@@ -288,6 +338,7 @@ class WorkerUI {
                 }
             }
 
+            // Buscador de clientes en lista principal
             function filterCl() {
                 let val = document.getElementById('searchFileCl').value.toLowerCase();
                 let items = document.getElementsByClassName('search-item-cl');
