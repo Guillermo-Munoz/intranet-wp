@@ -47,10 +47,18 @@ class TrashManager {
     }
     
     public static function getTrashItems($base_path) {
-        $trash_path = $base_path . INTRANET_TRASH_FOLDER . '/';
+    $trash_path = $base_path . INTRANET_TRASH_FOLDER . '/';
+    
+    if (!is_dir($trash_path)) return [];
+    
+    $items = array_diff(scandir($trash_path), ['.', '..', 'index.php', 'log_borrados.txt']);
+    return array_reverse($items);
+}
+    // public static function getTrashItems($base_path) {
+    //     $trash_path = $base_path . INTRANET_TRASH_FOLDER . '/';
         
-        if (!is_dir($trash_path)) return [];
+    //     if (!is_dir($trash_path)) return [];
         
-        return array_diff(scandir($trash_path), ['.', '..', 'index.php', 'log_borrados.txt']);
-    }
+    //     return array_diff(scandir($trash_path), ['.', '..', 'index.php', 'log_borrados.txt']);
+    // }
 }
