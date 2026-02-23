@@ -152,7 +152,8 @@ function intranet_gestoria_menu_items($items, $args) {
 
         if ($es_gestoria) {
             $nuevo_item .= '<li class="menu-item"><a href="' . home_url('/dashboard/') . '">📊 Panel Gestión</a></li>';
-            $nuevo_item .= '<li class="menu-item"><a href="' . admin_url('users.php') . '">👥 Lista Clientes</a></li>';
+            $nuevo_item .= '<li class="menu-item"><a href="' . admin_url('users.php?role=subscriber') . '">👥 Lista Clientes</a></li>';
+            $nuevo_item .= '<li class="menu-item"><a href="' . admin_url('users.php?role=' . IG_ROLE_WORKER) . '">👷 Lista Trabajadores</a></li>';
         } elseif ($es_trabajador) {
             $nuevo_item .= '<li class="menu-item"><a href="' . home_url('/area-trabajador/') . '">👥 Mis Clientes</a></li>';
         } else {
@@ -302,6 +303,36 @@ function ig_quitar_barra() {
         </style>';
     }
 }
+
+// /**
+//  * Concede al rol "author" (gestoría) capacidad para acceder
+//  * al listado de usuarios del panel de WordPress.
+//  */
+// add_filter('user_has_cap', function($caps, $cap_requested, $args, $user) {
+//     if (!in_array('author', $user->roles)) return $caps;
+    
+//     if (in_array($cap_requested[0], ['list_users', 'edit_users'])) {
+//         $caps[$cap_requested[0]] = true;
+//     }
+//     return $caps;
+// }, 10, 4);
+
+// /**
+//  * Restringe qué usuarios puede ver el "author" en users.php.
+//  * Solo se muestran clientes (subscriber) y trabajadores, 
+//  * nunca administradores u otros roles internos.
+//  */
+// add_action('pre_user_query', function($query) {
+//     if (!current_user_can('author') || current_user_can('administrator')) return;
+    
+//     global $wpdb;
+    
+//     $query->query_where .= " AND ID IN (
+//         SELECT user_id FROM {$wpdb->usermeta}
+//         WHERE meta_key = '{$wpdb->prefix}capabilities'
+//         AND (meta_value LIKE '%subscriber%' OR meta_value LIKE '%" . IG_ROLE_WORKER . "%')
+//     )";
+// });
 
 // Los ganchos que inyectan el CSS en la cabecera
 add_action('admin_head', 'ig_quitar_barra', 999);

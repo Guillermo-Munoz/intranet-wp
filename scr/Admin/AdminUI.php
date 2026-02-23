@@ -294,6 +294,10 @@ class AdminUI {
                     <p>Selecciona los cliente para asignarlo al trabajador:  <strong><?php echo esc_html($worker_info->display_name); ?></strong>:</p>
                     <input type="text" id="searchAssignClient" class="search-cl" placeholder="🔍 Filtrar clientes..." onkeyup="filterAssignClients()">
                     <h3 style="margin-top:30px;">👤Clientes</h3>
+                    <div style="display:flex; gap:15px; margin-bottom:10px; font-size:13px;">
+                        <span><span style="display:inline-block; width:12px; height:12px; background:#f2fff3; border:1px solid #6dbb65; border-radius:2px; margin-right:4px;"></span>Sin trabajador asignado</span>
+                        <span><span style="display:inline-block; width:12px; height:12px; background:#fbf0ce; border:1px solid #d4a017; border-radius:2px; margin-right:4px;"></span>Al menos un trabajador asignado</span>
+                    </div>
                     <div style="border:1px solid #ddd; border-radius:8px; overflow:hidden; background:white;">
                         <?php if (empty($unassigned_clients)): ?>
                             <p style="padding:20px; color:#666;">No hay clientes disponibles para asignar.</p>
