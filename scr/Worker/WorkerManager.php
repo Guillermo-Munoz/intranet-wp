@@ -31,13 +31,21 @@ class WorkerManager {
      * @return bool True si tiene acceso, false si no
      */
     public function hasAccessToClient($client_id) {
-        $assigned_worker = ig_get_worker_by_client($client_id);
+        // Obtener TODOS los trabajadores asignados al cliente
+        $assigned_workers = ig_get_workers_by_client($client_id);
 
-        if (!$assigned_worker) {
+      if (empty($assigned_workers)) {
             return false;
         }
 
-        return $assigned_worker->ID === $this->worker_id;
+        // Comprobar si el trabajador actual está en la lista
+        foreach ($assigned_workers as $worker) {
+            if ($worker->ID === $this->worker_id) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
