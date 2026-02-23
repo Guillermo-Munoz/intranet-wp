@@ -237,7 +237,7 @@ function intranet_gestoria_procesar_descarga() {
     $partes = explode('/', $archivo);
     $carpeta_cliente = $partes[0]; 
     
-    // Aquí el problema: el $archivo empieza con "2026" no con "cliente-XX"
+    // OJO: el $archivo empieza con "2026" no con "cliente-XX"
     // Por eso el ID propietario da 0
     
     // Verificar si es una carpeta de cliente o no
