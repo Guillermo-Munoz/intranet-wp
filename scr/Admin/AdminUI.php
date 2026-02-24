@@ -40,6 +40,7 @@ class AdminUI {
             #loading-gs { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: none; align-items: center; justify-content: center; z-index: 9999; flex-direction: column; }
             .spinner-cl { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #003B77; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 10px; }
             @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+            
         </style>
         
         <div id="loading-gs">
@@ -245,30 +246,54 @@ class AdminUI {
                         </p>
                     <?php else: ?>
                         <div style="border:1px solid #ddd; border-radius:8px; overflow:hidden;">
-                            <table class="cl-table" style="margin-top:0;">
-                                <thead>
-                                    <tr>
-                                        <th>Cliente</th>
-                                        <th>Correo</th>
-                                        <th style="text-align:right;">Acción</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($assigned_clients as $client): ?>
-                                        <?php $folder_name = intranet_get_client_folder($client->ID, $client->display_name); ?>
-                                        <tr class="worker-detail-client" style="background-color:#fff;">
-                                            <td style="padding:8px 12px;"><strong><?php echo esc_html($client->display_name); ?></strong></td>
-                                            <td style="padding:8px 12px; color:#999; font-size:12px;"><?php echo esc_html($client->user_email); ?></td>
-                                            <td style="padding:8px 12px; text-align:right;">
-                                                <a href="?ver_cliente=<?php echo urlencode($folder_name); ?>" 
-                                                style="background:#f0f0f0; color:#333; text-decoration:none; padding:5px 12px; border-radius:5px; font-size:12px; border:1px solid #ccc;">
-                                                    📁 Ver archivos
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
+                           <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+  <style>
+    @media (max-width: 600px) {
+        /* Convertimos la fila en un contenedor vertical centrado */
+        .worker-detail-client { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        /* Quitamos bordes y centramos el texto de las celdas */
+        .worker-detail-client td { 
+            display: block; 
+            width: 100%; 
+            text-align: center !important; 
+            padding: 5px 0 !important;
+            border: none !important;
+        }
+        /* Escondemos el encabezado de la tabla */
+        .cl-table thead { display: none; }
+    }
+</style>
+
+<table class="cl-table" style="width:100%;">
+    <thead>
+        <tr>
+            <th>Cliente</th>
+            <th>Correo</th>
+            <th style="text-align:right;">Acción</th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php foreach ($assigned_clients as $client): ?>
+            <?php $folder_name = intranet_get_client_folder($client->ID, $client->display_name); ?>
+            <tr class="worker-detail-client">
+                <td><strong><?php echo esc_html($client->display_name); ?></strong></td>
+                <td style="color:#999; font-size:12px;"><?php echo esc_html($client->user_email); ?></td>
+                <td style="text-align:right;">
+                    <a href="?ver_cliente=<?php echo urlencode($folder_name); ?>" 
+                       style="background:#f0f0f0; color:#333; text-decoration:none; padding:8px 20px; border-radius:5px; font-size:12px; border:1px solid #ccc; display:inline-block;">
+                        📁 Ver archivos
+                    </a>
+                </td>
+            </tr>
+        <?php endforeach; ?>
+    </tbody>
+</table>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -597,21 +622,23 @@ class AdminUI {
                         $clients = ig_get_clients_by_worker($worker->ID); 
                         $num_clients = count($clients);
                         ?>
-                        <div class="worker-section-summary" style="margin-bottom:20px; border:1px solid #ddd; border-radius:8px; overflow:hidden;">
-                            <div style="background:#2E7D32; color:white; padding:15px; display:flex; justify-content:space-between; align-items:center;">
-                                <div style="flex:1;">
-                                    <strong>👷 <?php echo esc_html($worker->display_name); ?></strong>
-                                    <span style="background:rgba(255,255,255,0.2); padding:4px 12px; border-radius:20px; font-size:12px; margin-left:10px;">
+                        <div class="worker-section-summary" style="margin-bottom:20px; border:1px solid #ddd; border-radius:8px; overflow:hidden; font-family: sans-serif;">
+                            <div style="background:#2E7D32; color:white; padding:12px; display:flex; flex-wrap: wrap; justify-content:space-between; align-items:center; gap: 15px;">
+                                
+                                <div style="flex: 1; min-width: 200px;">
+                                    <strong style="font-size: 16px;">👷 <?php echo esc_html($worker->display_name); ?></strong>
+                                    <div style="display:inline-block; background:rgba(255,255,255,0.2); padding:4px 12px; border-radius:20px; font-size:12px; margin-left:5px; margin-top: 5px;">
                                         <?php echo $num_clients . ' ' . ($num_clients === 1 ? 'cliente' : 'clientes'); ?>
-                                    </span>
+                                    </div>
                                 </div>
-                                <div style="display:flex; gap:10px; align-items:center;">
-                                    <a href="?ver_list_clientes=<?php echo $worker->ID; ?>"style="background:#fff; color:#2E7D32; text-decoration:none; padding:8px 16px; border-radius:5px; font-size:13px; font-weight:bold;">
+
+                                <div style="display:flex; gap:10px; align-items:center; flex-wrap: wrap;">
+                                    <a href="?ver_list_clientes=<?php echo $worker->ID; ?>" style="background:#fff; color:#2E7D32; text-decoration:none; padding:8px 10px; border-radius:5px; font-size:13px; font-weight:bold; flex-grow: 1; text-align: center;">
                                         👤 Añadir cliente
                                     </a>
 
-                                    <a href="?ver_trabajador=<?php echo $worker->ID; ?>" style="background:#fff; color:#2E7D32; text-decoration:none; padding:8px 16px; border-radius:5px; font-size:13px; font-weight:bold;">
-                                        📋 Ver Todos los Clientes
+                                    <a href="?ver_trabajador=<?php echo $worker->ID; ?>" style="background:#fff; color:#2E7D32; text-decoration:none; padding:8px 10px; border-radius:5px; font-size:13px; font-weight:bold; flex-grow: 1; text-align: center;">
+                                        📋 Ver Todos
                                     </a>
                                      <?php /* <form method="post" style="margin:0; display:inline-block;" action="<?php echo esc_url(home_url('/customer-area/dashboard/')); ?>" onsubmit="return confirm('¿Degradar <?php echo esc_html($worker->display_name); ?> a Cliente? Se perderán sus asignaciones.');">
                                         <input type="hidden" name="worker_id" value="<?php echo $worker->ID; ?>">
