@@ -152,7 +152,8 @@ function intranet_gestoria_menu_items($items, $args) {
 
         if ($es_gestoria) {
             $nuevo_item .= '<li class="menu-item"><a href="' . home_url('/dashboard/') . '">📊 Panel Gestión</a></li>';
-            $nuevo_item .= '<li class="menu-item"><a href="' . admin_url('users.php') . '">👥 Lista Clientes</a></li>';
+            $nuevo_item .= '<li class="menu-item"><a href="' . admin_url('users.php?role=subscriber') . '">👥 Lista Clientes</a></li>';
+            $nuevo_item .= '<li class="menu-item"><a href="' . admin_url('users.php?role=' . IG_ROLE_WORKER) . '">👷 Lista Trabajadores</a></li>';
         } elseif ($es_trabajador) {
             $nuevo_item .= '<li class="menu-item"><a href="' . home_url('/area-trabajador/') . '">👥 Mis Clientes</a></li>';
         } else {
@@ -302,6 +303,82 @@ function ig_quitar_barra() {
         </style>';
     }
 }
+
+/**
+ * Oculta las notificaciones y avisos de plugins de terceros en el panel
+ * de administración para que el rol "author" (gestoría) tenga una
+ * interfaz limpia sin distracciones.
+ */
+add_action('admin_head', function() {
+    if (!current_user_can('author')) return;
+    echo '<style>
+        .notice, .update-nag, .updated, .error, .is-dismissible {
+            display: none !important;
+        }
+    </style>';
+});
+
+/**
+ * Envía un aviso al administrador cuando se registra un nuevo usuario,
+ * como alternativa al sistema de Ultimate Member que puede fallar.
+ */
+add_action('um_registration_complete', function($user_id, $args) {
+    $user = get_userdata($user_id);
+    
+    $to      = 'soporte@sgasesores.es';
+    $subject = 'Nuevo usuario registrado: ' . $user->display_name;
+    $headers = ['Content-Type: text/html; charset=UTF-8'];
+    
+    $body = '
+    <div style="max-width:600px;margin:0 auto;background-color:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0">
+        <div style="background-color:#1a365d;padding:30px;text-align:center">
+            <h1 style="color:#ffffff;margin:0;font-size:24px;letter-spacing:1px">S&G ASESORES</h1>
+        </div>
+        <div style="padding:40px 30px">
+            <h2 style="color:#2d3748;margin-bottom:15px;font-size:18px">Estimado/a Equipo de Gestión:</h2>
+            <p style="color:#4a5568;font-size:16px;line-height:1.6">El usuario <strong>' . esc_html($user->display_name) . '</strong> acaba de registrarse.</p>
+            <div style="background:#f8fafc;padding:15px;border-radius:6px;border:1px solid #e2e8f0;color:#4a5568;font-size:14px;">
+                <strong>Email:</strong> ' . esc_html($user->user_email) . '
+            </div>
+            <p style="color:#718096;font-size:14px;margin-top:40px">
+                Saludos cordiales,<br>
+                <strong>El equipo de S&G ASESORES</strong>
+            </p>
+        </div>
+    </div>';
+    
+    wp_mail($to, $subject, $body, $headers);
+}, 10, 2);
+
+// /**
+//  * Concede al rol "author" (gestoría) capacidad para acceder
+//  * al listado de usuarios del panel de WordPress.
+//  */
+// add_filter('user_has_cap', function($caps, $cap_requested, $args, $user) {
+//     if (!in_array('author', $user->roles)) return $caps;
+    
+//     if (in_array($cap_requested[0], ['list_users', 'edit_users'])) {
+//         $caps[$cap_requested[0]] = true;
+//     }
+//     return $caps;
+// }, 10, 4);
+
+// /**
+//  * Restringe qué usuarios puede ver el "author" en users.php.
+//  * Solo se muestran clientes (subscriber) y trabajadores, 
+//  * nunca administradores u otros roles internos.
+//  */
+// add_action('pre_user_query', function($query) {
+//     if (!current_user_can('author') || current_user_can('administrator')) return;
+    
+//     global $wpdb;
+    
+//     $query->query_where .= " AND ID IN (
+//         SELECT user_id FROM {$wpdb->usermeta}
+//         WHERE meta_key = '{$wpdb->prefix}capabilities'
+//         AND (meta_value LIKE '%subscriber%' OR meta_value LIKE '%" . IG_ROLE_WORKER . "%')
+//     )";
+// });
 
 // Los ganchos que inyectan el CSS en la cabecera
 add_action('admin_head', 'ig_quitar_barra', 999);

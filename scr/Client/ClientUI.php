@@ -111,6 +111,34 @@ class ClientUI {
             </div>
         </div>
         
+        <style>
+            @media (max-width: 600px) {
+                #tablaArchivos thead { display: none; } /* Escondemos cabecera */
+                
+                .search-item-cl { 
+                    display: flex; 
+                    flex-direction: column; 
+                    align-items: center; 
+                    padding: 15px; 
+                    border-bottom: 1px solid #eee; 
+                    text-align: center;
+                }
+
+                .search-item-cl td { 
+                    display: block; 
+                    width: 100% !important; 
+                    padding: 5px 0 !important; 
+                    text-align: center !important;
+                    border: none !important;
+                }
+
+                /* Ajuste para que los botones de acción no se estiren */
+                .search-item-cl td:last-child div { 
+                    justify-content: center !important; 
+                    margin-top: 10px;
+                }
+            }
+        </style>
         <script>
             const dzCl = document.getElementById('dropZoneCl');
             const inCl = document.getElementById('inputCl');
