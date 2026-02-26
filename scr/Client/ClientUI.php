@@ -34,7 +34,7 @@ class ClientUI {
                     $acc = '';
                     foreach ($dirs as $d) {
                         $acc .= $d . '/';
-                        $d_limpio = str_replace('_gs_', '', $d);
+                        $d_limpio = str_replace(['_gs_', '_sys'], '', $d);
                         echo " / <a href='?dir=".urlencode(rtrim($acc, '/'))."'>$d_limpio</a>";
                     }
                 }
@@ -67,10 +67,10 @@ class ClientUI {
                         <tr class="search-item-cl">
                             <td class="nombre-archivo-cl">
                                 <?php if ($file['is_dir']): ?>
-                                    <a href="?ver_cliente=<?php echo $ver_cliente; ?>&dir=<?php echo urlencode($file['rel_path']); ?>" style="text-decoration:none; color:#333;">📁 <b><?php echo esc_html(str_replace('_gs_', '', $file['name'])); ?>/</b></a>
+                                    <a href="?ver_cliente=<?php echo $ver_cliente; ?>&dir=<?php echo urlencode($file['rel_path']); ?>" style="text-decoration:none; color:#333;">📁 <b><?php echo esc_html(str_replace(['_gs_', '_sys'],'', $file['name'])); ?>/</b></a>
                                 <?php else: ?>
                                     <a href="<?php echo admin_url('admin-ajax.php?action=ig_descarga&view=1&archivo=' . urlencode($manager->getIdCarpeta() . '/' . $file['rel_path'])); ?>" target="_blank" style="text-decoration:none; color:#003B77;">
-                                        📄 <?php echo esc_html(str_replace('_gs_', '', $file['name'])); ?>
+                                        📄 <?php echo esc_html(str_replace(['_gs_', '_sys'],'', $file['name'])); ?>
                                     </a>
                                 <?php endif; ?>
                             </td>
@@ -93,7 +93,7 @@ class ClientUI {
 
                                 <!-- BORRAR o CANDADO -->
                                 <?php 
-                                $es_sistema  = ($file['name'] === INTRANET_YEAR);
+                                $es_sistema  = (substr($file['name'], -4) === '_sys');
                                 $es_gestoria = (strpos($file['name'], '_gs_') === 0);
                                 
                                 if (!$es_sistema && !$es_gestoria): ?>

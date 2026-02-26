@@ -27,7 +27,7 @@ function intranet_ensure_trash_directory($base_path) {
 }
 
 function intranet_ensure_year_directory($base_path) {
-    $year_path = $base_path . INTRANET_YEAR . '/';
+    $year_path = $base_path . INTRANET_YEAR . '_sys/';
     if (!file_exists($year_path)) {
         wp_mkdir_p($year_path);
     }
