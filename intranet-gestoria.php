@@ -158,6 +158,7 @@ function intranet_gestoria_menu_items($items, $args) {
             $nuevo_item .= '<li class="menu-item"><a href="' . home_url('/area-trabajador/') . '">👥 Mis Clientes</a></li>';
         } else {
             $nuevo_item .= '<li class="menu-item"><a href="' . home_url('/my-files/') . '">📁 Mis Archivos</a></li>';
+            $nuevo_item .= '<li class="menu-item"><a href="' . home_url('/Manual/') . '">🎞️ Video manual</a></li>';
         }
 
         $nuevo_item .= '<li class="menu-item"><a href="' . wp_logout_url(home_url()) . '" style="color:#cc0000 !important;">🚪 Cerrar Sesión</a></li>';
