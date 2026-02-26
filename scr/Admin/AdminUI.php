@@ -313,7 +313,7 @@ class AdminUI {
                 ?>
                 <div class="gestor-header">
                     <h3 style="margin:0; color:white;">👤 Asignar Cliente a: <?php echo $worker_info ? esc_html($worker_info->display_name) : 'Trabajador'; ?></h3>
-                    <a href="<?php echo strtok($_SERVER["REQUEST_URI"], '?'); ?>" style="color:#fff; font-size:12px; text-decoration:none; background:rgba(255,255,255,0.1); padding:5px 10px; border-radius:4px;">✕ Cancelar</a>
+                    <a href="<?php echo strtok($_SERVER["REQUEST_URI"], '?'); ?>" style="color:#fff; font-size:12px; text-decoration:none; background:rgba(255,255,255,0.1); padding:5px 10px; border-radius:4px;">⬅ Volver</a>
                 </div>
                 <div style="padding:20px;">
                     <p>Selecciona los cliente para asignarlo al trabajador:  <strong><?php echo esc_html($worker_info->display_name); ?></strong>:</p>
