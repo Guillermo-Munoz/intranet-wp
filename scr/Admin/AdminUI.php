@@ -15,8 +15,14 @@ class AdminUI {
         ob_start();
         ?>
         <style>
+            #tablaArchivos thead th {
+                position: sticky;
+                top: 0;
+                z-index: 1;
+                
+            }
             /* ESTILOS UNIFICADOS (IGUAL AL CLIENTE) */
-            .gestor-container { max-width: 1000px; margin: 20px auto; font-family: sans-serif; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background: #fff; border: 1px solid #ddd; }
+            .gestor-container { max-width: 1000px; margin: 20px auto; font-family: sans-serif; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background: #fff;  }
             .gestor-header { background: #003B77; color: #fff; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
             .breadcrumb-gs { padding: 12px 20px; background: #f8f9fa; border-bottom: 1px solid #eee; font-size: 14px; }
             
@@ -33,13 +39,82 @@ class AdminUI {
             .drop-zone-cl:hover { border-color: #003B77; background: #f0f7ff; }
             
             .audit-tab-buttons { margin: 15px 0; display: flex; gap: 10px; }
-            .audit-tab-btn { padding: 8px 16px; border: 1px solid #ddd; background: #f5f5f5; cursor: pointer; border-radius: 5px; font-size: 14px; }
+            .audit-tab-btn { padding: 8px 16px; background: #f5f5f5; cursor: pointer; border-radius: 5px; font-size: 14px; }
             .audit-tab-btn.active { background: #003B77; color: white; }
 
             /* Loader */
             #loading-gs { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: none; align-items: center; justify-content: center; z-index: 9999; flex-direction: column; }
             .spinner-cl { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #003B77; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 10px; }
             @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+            /* Fecha escritorio: visible por defecto, oculta en móvil */
+            .fecha-movil  { display: none; }
+            .fecha-desktop { display: table-cell; }
+
+            @media (max-width: 600px) {
+                /* Ocultar cabecera de tabla */
+                #tablaArchivos thead { display: none; }
+
+                /* Convertir filas en tarjetas centradas */
+                .search-item-cl {
+                    display: flex !important;
+                    flex-direction: column;
+                    align-items: center;
+                    padding: 15px 10px;
+                    border-bottom: 1px solid #eee !important;
+                    gap: 5px;
+                    background: #fff;
+                }
+
+                /* Cada celda ocupa toda la anchura */
+                .search-item-cl td {
+                    display: block !important;
+                    width: 100% !important;
+                    text-align: center !important;
+                    padding: 4px 0 !important;
+                    border: none !important;
+                }
+
+                /* Ocultar celda de fecha desktop — más específico que td para ganar la cascada */
+                .search-item-cl td.fecha-desktop {
+                    display: none !important;
+                    height: 0 !important;
+                    padding: 0 !important;
+                    overflow: hidden !important;
+                }
+
+                /* Mostrar fecha dentro de la celda del autor en móvil */
+                .fecha-movil { display: inline !important; }
+
+                /* Centrar botones de acción */
+                .search-item-cl td div {
+                    justify-content: center !important;
+                    margin-top: 8px;
+                }
+                /*Quitar bordes en móvil*/
+                .entry-content table:not(.variations) {
+                    border: none !important;
+                }
+                /*Vista de tarjetas para móvil*/
+                .cl-table tr, .gs-table tr {
+                    border: 1px solid #080808 !important;
+                    margin-bottom: 10px;
+                    border-radius: 8px;
+                    background: ##f5f5f5;
+                    padding: 5px !important;
+                }
+                /*Fondo nomnre de archivo o carpeta en móvil*/
+                .nombre-archivo-cl {
+                    background: #ececec;
+                    padding: 5px 10px;
+                    border-radius: 4px;
+                    display: inline-block;
+                    margin-bottom: 5px;
+                }
+                element.style {
+                border: none !important;
+                }
+            }
+            
             
         </style>
         
@@ -109,7 +184,8 @@ class AdminUI {
                 
                 if (!empty($trash_items)) {
                     echo '<table class="cl-table" style="margin-top: 20px;">';
-                    echo '<thead><tr><th>Documento</th><th>Fecha</th><th style="text-align:right;">Acción</th></tr></thead>';
+                    // Cabecera: fecha con clase para ocultar en móvil
+                    echo '<thead><tr><th>Documento</th><th class="fecha-desktop">Fecha</th><th style="text-align:right;">Acción</th></tr></thead>';
                     echo '<tbody>';
                     
                     foreach ($trash_items as $item) {
@@ -119,14 +195,16 @@ class AdminUI {
                         
                         preg_match('/(\d{4}-\d{2}-\d{2})_(\d{2}-\d{2}-\d{2})_(.*)/', $item, $matches);
                         $nombre = isset($matches[3]) ? $matches[3] : $item;
-                        // $fecha = isset($matches[1]) ? $matches[1] . ' ' . str_replace('-', ':', $matches[2]) : date('d/m/Y H:i', filemtime($item_full));
                         $fecha = isset($matches[1]) 
-                        ? date('d-m-Y', strtotime($matches[1])) . ' ' . str_replace('-', ':', $matches[2])
-                        : date('d-m-Y H:i', filemtime($item_full));
+                            ? date('d-m-Y', strtotime($matches[1])) . ' ' . str_replace('-', ':', $matches[2])
+                            : date('d-m-Y H:i', filemtime($item_full));
                         
-                        echo '<tr>';
-                        echo '<td>'. ($es_carpeta ? '📁' : '📄') . ' <span class="badge-autor badge-papelera">'. esc_html($nombre) . '</span></td>';
-                        echo '<td>' . $fecha . '</td>';
+                        // Fila con clase search-item-cl para estilos móvil
+                        echo '<tr class="search-item-cl">';
+                        // Documento: incluye fecha-movil visible solo en móvil
+                        echo '<td>'. ($es_carpeta ? '📁' : '📄') . ' <span class="badge-autor badge-papelera">'. esc_html($nombre) . '</span><br><small class="fecha-movil" style="color:#999; font-size:11px;">' . $fecha . '</small></td>';
+                        // Fecha: visible solo en escritorio
+                        echo '<td class="fecha-desktop">' . $fecha . '</td>';
                         echo '<td style="text-align:right;"><div style="display:flex; gap:8px; justify-content:flex-end;">';
                         
                         if (!$es_carpeta) {
@@ -137,10 +215,11 @@ class AdminUI {
                         echo '<input type="hidden" name="ruta_archivo_papelera" value="' . esc_attr($ver_cliente . '/' . INTRANET_TRASH_FOLDER . '/' . $item) . '">';
                         echo '<button type="submit" name="borrar_archivo_papelera" class="btn-accion-circular-borrar">🗑️</button>';
                         echo '</form>';
-                                                
+                                        
                         echo '</div></td></tr>';
                     }
                     echo '</tbody></table>';
+
                 } else {
                     echo '<p style="text-align:center; color:#999; padding:30px;">✅ No hay elementos en la papelera</p>';
                 }
@@ -162,12 +241,12 @@ class AdminUI {
                         <input type="file" name="archivo_gestor[]" id="inputCl" multiple style="display:none;">
                     </div>
                 </form>
-                
+                <div style="max-height: 400px; overflow-y: auto; border: 1px solid #eee; border-radius: 6px;">
                 <table class="cl-table" id="tablaArchivos">
                     <thead>
                         <tr>
                             <th>Documento</th>
-                            <th>Fecha</th>
+                            <th class="fecha-desktop">Fecha</th>
                             <th>Autor</th>
                             <th style="text-align:right;">Acción</th>
                         </tr>
@@ -175,7 +254,7 @@ class AdminUI {
                     <tbody>
                     <?php foreach ($files as $file): ?>
                             <tr class="search-item-cl">
-                                <td>
+                                <td class="nombre-archivo-cl">
                                     <?php if ($file['is_dir']): ?>
                                         <a href="?ver_cliente=<?php echo $ver_cliente; ?>&dir=<?php echo urlencode($file['rel_path']); ?>" style="text-decoration:none; color:#333;">📁 <b><?php echo esc_html(str_replace('_gs_', '', $file['name'])); ?>/</b></a>
                                     <?php else: ?>
@@ -184,10 +263,12 @@ class AdminUI {
                                         </a>
                                     <?php endif; ?>
                                 </td>
-                                <td><?php echo date('d-m-Y H:i', $file['date']); ?></td>      
+                                <!-- Fecha: visible en escritorio, oculta en móvil -->
+                                <td class="fecha-desktop"><?php echo date('d-m-Y H:i', $file['date']); ?></td>      
 
-                                
+                                <!-- Autor: en móvil incluye también la fecha -->
                                 <td>
+                                    <small class="fecha-movil" style="color:#999; font-size:11px;"><?php echo date('d-m-Y H:i', $file['date']); ?></small>
                                     <?php $autor_final = ($file['is_dir'] || $file['name'] === INTRANET_YEAR) ? 'Sistema' : $file['author']; ?>
                                     <span class="badge-autor badge-<?php echo strtolower($autor_final); ?>">
                                         <?php echo $autor_final; ?>
@@ -209,7 +290,7 @@ class AdminUI {
                         <?php endforeach; ?>
                     </tbody>
                 </table>
-                
+                </div>
             <?php endif; ?>
             
             </div>
@@ -245,55 +326,56 @@ class AdminUI {
                             Este trabajador no tiene clientes asignados.
                         </p>
                     <?php else: ?>
-                        <div style="border:1px solid #ddd; border-radius:8px; overflow:hidden;">
+                        <div style=" border-radius:8px; overflow:hidden;">
                            <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
-  <style>
-    @media (max-width: 600px) {
-        /* Convertimos la fila en un contenedor vertical centrado */
-        .worker-detail-client { 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-        }
-        /* Quitamos bordes y centramos el texto de las celdas */
-        .worker-detail-client td { 
-            display: block; 
-            width: 100%; 
-            text-align: center !important; 
-            padding: 5px 0 !important;
-            border: none !important;
-        }
-        /* Escondemos el encabezado de la tabla */
-        .cl-table thead { display: none; }
-    }
-</style>
+                <style>
+                    
+                    @media (max-width: 600px) {
+                        /* Convertimos la fila en un contenedor vertical centrado */
+                        .worker-detail-client { 
+                            display: flex; 
+                            flex-direction: column; 
+                            align-items: center; 
+                            padding: 15px;
+                            border-bottom: 1px solid #eee;
+                        }
+                        /* Quitamos bordes y centramos el texto de las celdas */
+                        .worker-detail-client td { 
+                            display: block; 
+                            width: 100%; 
+                            text-align: center !important; 
+                            padding: 5px 0 !important;
+                            border: none !important;
+                        }
+                        /* Escondemos el encabezado de la tabla */
+                        .cl-table thead { display: none; }
+                    }
+                </style>
 
-<table class="cl-table" style="width:100%;">
-    <thead>
-        <tr>
-            <th>Cliente</th>
-            <th>Correo</th>
-            <th style="text-align:right;">Acción</th>
-        </tr>
-    </thead>
-    <tbody>
-        <?php foreach ($assigned_clients as $client): ?>
-            <?php $folder_name = intranet_get_client_folder($client->ID, $client->display_name); ?>
-            <tr class="worker-detail-client">
-                <td><strong><?php echo esc_html($client->display_name); ?></strong></td>
-                <td style="color:#999; font-size:12px;"><?php echo esc_html($client->user_email); ?></td>
-                <td style="text-align:right;">
-                    <a href="?ver_cliente=<?php echo urlencode($folder_name); ?>" 
-                       style="background:#f0f0f0; color:#333; text-decoration:none; padding:8px 20px; border-radius:5px; font-size:12px; border:1px solid #ccc; display:inline-block;">
-                        📁 Ver archivos
-                    </a>
-                </td>
-            </tr>
-        <?php endforeach; ?>
-    </tbody>
-</table>
+                <table class="cl-table" style="width:100%;">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Correo</th>
+                            <th style="text-align:right;">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($assigned_clients as $client): ?>
+                            <?php $folder_name = intranet_get_client_folder($client->ID, $client->display_name); ?>
+                            <tr class="worker-detail-client">
+                                <td><strong><?php echo esc_html($client->display_name); ?></strong></td>
+                                <td style="color:#999; font-size:12px;"><?php echo esc_html($client->user_email); ?></td>
+                                <td style="text-align:right;">
+                                    <a href="?ver_cliente=<?php echo urlencode($folder_name); ?>" 
+                                    style="background:#f0f0f0; color:#333; text-decoration:none; padding:8px 20px; border-radius:5px; font-size:12px; border:1px solid #ccc; display:inline-block;">
+                                        📁 Ver archivos
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -313,7 +395,7 @@ class AdminUI {
                 ?>
                 <div class="gestor-header">
                     <h3 style="margin:0; color:white;">👤 Asignar Cliente a: <?php echo $worker_info ? esc_html($worker_info->display_name) : 'Trabajador'; ?></h3>
-                    <a href="<?php echo strtok($_SERVER["REQUEST_URI"], '?'); ?>" style="color:#fff; font-size:12px; text-decoration:none; background:rgba(255,255,255,0.1); padding:5px 10px; border-radius:4px;">✕ Cancelar</a>
+                    <a href="<?php echo strtok($_SERVER["REQUEST_URI"], '?'); ?>" style="color:#fff; font-size:12px; text-decoration:none; background:rgba(255,255,255,0.1); padding:5px 10px; border-radius:4px;">⬅ Volver</a>
                 </div>
                 <div style="padding:20px;">
                     <p>Selecciona los cliente para asignarlo al trabajador:  <strong><?php echo esc_html($worker_info->display_name); ?></strong>:</p>
@@ -323,16 +405,16 @@ class AdminUI {
                         <span><span style="display:inline-block; width:12px; height:12px; background:#f2fff3; border:1px solid #6dbb65; border-radius:2px; margin-right:4px;"></span>Sin trabajador asignado</span>
                         <span><span style="display:inline-block; width:12px; height:12px; background:#fbf0ce; border:1px solid #d4a017; border-radius:2px; margin-right:4px;"></span>Al menos un trabajador asignado</span>
                     </div>
-                    <div style="border:1px solid #ddd; border-radius:8px; overflow:hidden; background:white;">
+                    <div style=" border-radius:8px; overflow:hidden; background:white;">
                         <?php if (empty($unassigned_clients)): ?>
                             <p style="padding:20px; color:#666;">No hay clientes disponibles para asignar.</p>
                         <?php else: ?>
-                            <table class="cl-table">
+                            <table class="cl-table assign-table">
                                 <thead>
                                     <tr>
                                         <th>Cliente</th>
-                                        <th>Correo</th>
-                                        <th>Asignado al trabajador</th>
+                                        <th class="assign-col-correo">Correo</th>
+                                        <th class="assign-col-asignado-a">Asignado al trabajador</th>
                                         <th style="text-align:center;">Asignado</th>
                                     </tr>
                                 </thead>
@@ -346,8 +428,8 @@ class AdminUI {
                                         ?>
                                         <tr class="assign-item">
                                             <td style="background-color:<?php echo $row_bg; ?>; border-top:1px solid <?php echo $row_border; ?>; border-bottom:1px solid <?php echo $row_border; ?>; border-left:1px solid <?php echo $row_border; ?>;"><strong><?php echo esc_html($client->display_name); ?></strong></td>
-                                            <td style="background-color:<?php echo $row_bg; ?>; border-top:1px solid <?php echo $row_border; ?>; border-bottom:1px solid <?php echo $row_border; ?>;"><?php echo esc_html($client->user_email); ?></td>
-                                            <td data-nombres="<?php echo esc_attr(implode(',', array_map(fn($w) => $w->display_name, $workers_asignados))); ?>"
+                                            <td class="assign-col-correo" style="background-color:<?php echo $row_bg; ?>; border-top:1px solid <?php echo $row_border; ?>; border-bottom:1px solid <?php echo $row_border; ?>;"><?php echo esc_html($client->user_email); ?></td>
+                                            <td class="assign-col-asignado-a" data-nombres="<?php echo esc_attr(implode(',', array_map(fn($w) => $w->display_name, $workers_asignados))); ?>"
                                                 style="color:#666; background-color:<?php echo $row_bg; ?>; border-top:1px solid <?php echo $row_border; ?>; border-bottom:1px solid <?php echo $row_border; ?>;">
                                                 <?php if (empty($workers_asignados)): ?>
                                                     <span style="color:#999;">Sin asignar</span>
@@ -369,17 +451,45 @@ class AdminUI {
                                                     data-client="<?php echo $client->ID; ?>"
                                                     data-action="<?php echo $es_este_worker ? 'desvincular' : 'asignar'; ?>"
                                                     style="width:22px; height:22px; border:2px solid #555; border-radius:3px; background:<?php echo $es_este_worker ? '#555' : '#fff'; ?>; cursor:pointer; padding:0; display:inline-flex; align-items:center; justify-content:center; font-size:14px; color:#fff; line-height:1;">
-                                                <?php echo $es_este_worker ? '✓' : ''; ?>
-                                            </button>
+                                                    <?php echo $es_este_worker ? '✓' : ''; ?>
+                                                </button>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
-                                   
                                 </tbody>
                             </table>
                         <?php endif; ?>
                     </div>
                 </div>
+                <style>
+                    @media (max-width: 600px) {
+                        /* Ocultar cabecera */
+                        .assign-table thead { display: none; }
+
+                        /* Tarjeta por fila */
+                        .assign-item {
+                            display: flex !important;
+                            flex-direction: column;
+                            align-items: center;
+                            padding: 15px 10px;
+                            border-bottom: 1px solid #eee !important;
+                            gap: 5px;
+                        }
+
+                        /* Cada celda ocupa toda la anchura */
+                        .assign-item td {
+                            display: block !important;
+                            width: 100% !important;
+                            text-align: center !important;
+                            padding: 4px 0 !important;
+                            border: none !important;
+                        }
+
+                        /* Ocultar columna correo y asignado en móvil — poco espacio */
+                        .assign-col-correo,
+                        .assign-col-asignado-a { display: none !important; }
+                    }
+                </style>
                 <script>
                     function filterAssignClients() {
                         let input = document.getElementById('searchAssignClient').value.toLowerCase();
@@ -515,94 +625,6 @@ class AdminUI {
                 }
                 ?>
 
-                <?php /* <!-- SECCIÓN 1: Trabajadores SIN clientes -->
-                <!-- <h3 style="margin-top:0;">🔵 Trabajadores sin Clientes Asignados</h3>
-
-                <?php if (empty($workers_without_clients)): ?>
-                    <p style="color:#999; padding:20px; background:#f5f5f5; border-radius:5px; text-align:center;">
-                        ✅ Todos los trabajadores tienen clientes asignados.
-                    </p>
-                <?php else: ?>
-                    <div style="border:1px solid #ddd; border-radius:8px; overflow:hidden; margin-bottom:30px;">
-                        <?php foreach ($workers_without_clients as $worker): ?>
-                            <div class="worker-no-clients" style="padding:15px; border-top:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
-                                <div style="flex:1;">
-                                    <strong>👷 <?php echo esc_html($worker->display_name); ?></strong>
-                                    <span style="color:#999; font-size:12px; margin-left:10px;"><?php echo $worker->user_email; ?></span>
-                                </div>
-                                <div style="display:flex; gap:10px; align-items:center;">
-                                    <span style="background:#e3f2fd; color:#1976d2; padding:4px 12px; border-radius:20px; font-size:12px;">
-                                        Sin clientes
-                                    </span>
-                                        <form method="post" style="margin:0; display:inline-block;" action="<?php echo esc_url(home_url('/customer-area/dashboard/')); ?>" onsubmit="return confirm('¿Degradar <?php echo esc_html($worker->display_name); ?> a Cliente?');">
-                                        <input type="hidden" name="worker_id" value="<?php echo $worker->ID; ?>">
-                                        <button type="submit" name="degradar_trabajador" style="background:#FF6B6B; color:white; border:none; padding:6px 12px; border-radius:5px; cursor:pointer; font-size:13px; white-space:nowrap; display:block;">
-                                            ⬇️ Degradar
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?> -->*/ ?>
-
-                <?php /* <!-- SECCIÓN 2: Trabajadores CON clientes (resumen) -->
-                <!-- <h3 style="margin-top:30px;">Trabajadores</h3>
-
-                <?php if (empty($workers_with_clients)): ?>
-                    <p style="color:#999; padding:20px; background:#f5f5f5; border-radius:5px; text-align:center;">
-                        No hay trabajadores con clientes asignados.
-                    </p>
-                <?php else: ?>
-                    <?php foreach ($workers_with_clients as $worker_data): ?>
-                        <?php
-                        $worker = $worker_data['worker'];
-                        $clients = $worker_data['clients'];
-                        $num_clients = count($clients);
-                        ?>
-                        <div class="worker-section-summary" style="margin-bottom:20px; border:1px solid #ddd; border-radius:8px; overflow:hidden;">
-                            <div style="background:#2E7D32; color:white; padding:15px; display:flex; justify-content:space-between; align-items:center;">
-                                <div style="flex:1;">
-                                    <strong>👷 <?php echo esc_html($worker->display_name); ?></strong>
-                                    <span style="background:rgba(255,255,255,0.2); padding:4px 12px; border-radius:20px; font-size:12px; margin-left:10px;">
-                                        <?php echo $num_clients . ' ' . ($num_clients === 1 ? 'cliente' : 'clientes'); ?>
-                                    </span>
-                                </div>
-                                <div style="display:flex; gap:10px; align-items:center;">
-                                    <a href="?ver_trabajador=<?php echo $worker->ID; ?>" style="background:#fff; color:#2E7D32; text-decoration:none; padding:8px 16px; border-radius:5px; font-size:13px; font-weight:bold;">
-                                        📋 Ver Todos los Clientes
-                                    </a>
-                                    <form method="post" style="margin:0; display:inline-block;" action="<?php echo esc_url(home_url('/customer-area/dashboard/')); ?>" onsubmit="return confirm('¿Degradar <?php echo esc_html($worker->display_name); ?> a Cliente? Se perderán sus asignaciones.');">
-                                        <input type="hidden" name="worker_id" value="<?php echo $worker->ID; ?>">
-                                        <button type="submit" name="degradar_trabajador" style="background:#FF6B6B; color:white; border:none; padding:8px 14px; border-radius:5px; cursor:pointer; font-size:13px; font-weight:bold; white-space:nowrap;">
-                                            ⬇️ Degradar
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-
-                            <div style="padding:15px; background:#fafafa;">
-                                <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                                    <?php
-                                    // Mostrar primeros 3 clientes como preview
-                                    $preview_clients = array_slice($clients, 0, 3);
-                                    foreach ($preview_clients as $client):
-                                    ?>
-                                        <span style="background:#fff; border:1px solid #ddd; padding:6px 12px; border-radius:20px; font-size:12px;">
-                                            👤 <?php echo esc_html($client->display_name); ?>
-                                        </span>
-                                    <?php endforeach; ?>
-                                    <?php if ($num_clients > 3): ?>
-                                        <span style="background:#e3f2fd; border:1px solid #90caf9; padding:6px 12px; border-radius:20px; font-size:12px; color:#1976d2;">
-                                            +<?php echo ($num_clients - 3); ?> más
-                                        </span>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                <?php endif; ?> -->*/ ?>
-
                 <!-- SECCIÓN 2B: Trabajadores CON clientes y sin (resumen) -->
                  <h3 style="margin-top:30px;">👷 Trabajadores</h3>
 
@@ -640,12 +662,7 @@ class AdminUI {
                                     <a href="?ver_trabajador=<?php echo $worker->ID; ?>" style="background:#fff; color:#2E7D32; text-decoration:none; padding:8px 10px; border-radius:5px; font-size:13px; font-weight:bold; flex-grow: 1; text-align: center;">
                                         📋 Ver Todos
                                     </a>
-                                     <?php /* <form method="post" style="margin:0; display:inline-block;" action="<?php echo esc_url(home_url('/customer-area/dashboard/')); ?>" onsubmit="return confirm('¿Degradar <?php echo esc_html($worker->display_name); ?> a Cliente? Se perderán sus asignaciones.');">
-                                        <input type="hidden" name="worker_id" value="<?php echo $worker->ID; ?>">
-                                        <button type="submit" name="degradar_trabajador" style="background:#FF6B6B; color:white; border:none; padding:8px 14px; border-radius:5px; cursor:pointer; font-size:13px; font-weight:bold; white-space:nowrap;">
-                                            ⬇️ Degradar
-                                        </button>
-                                    </form>*/ ?>
+        
                                 </div>
                             </div>
 
@@ -672,55 +689,7 @@ class AdminUI {
                 <?php endif; ?>
 
 
-                <?php /* <!-- SECCIÓN 3: Clientes sin Trabajador Asignado -->
-                <!-- <h3 style="margin-top:30px;">📋 Clientes sin Trabajador Asignado</h3>
-
-                <?php if (empty($unassigned_clients)): ?>
-                    <p style="color:#999; padding:20px; background:#f5f5f5; border-radius:5px; text-align:center;">
-                        ✅ Todos los clientes tienen un trabajador asignado.
-                    </p>
-                <?php else: ?>
-                    <div style="border:1px solid #ddd; border-radius:8px; overflow:hidden;">
-                        <?php foreach ($unassigned_clients as $client): ?>
-                            <?php
-                            $folder_name = intranet_get_client_folder($client->ID, $client->display_name);
-                            ?>
-                            <div class="client-item-gs unassigned-client" style="padding:15px; border-top:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
-                                <div style="flex:1;">
-                                    <a href="?ver_cliente=<?php echo urlencode($folder_name); ?>" style="text-decoration:none; color:#333; font-weight:bold;">
-                                        👤 <?php echo esc_html($client->display_name); ?>
-                                    </a>
-                                    <span style="color:#999; font-size:12px; margin-left:10px;"><?php echo $client->user_email; ?></span>
-                                </div>
-                                <div style="display:flex; gap:10px; align-items:center;">
-                                    <?php if (!empty($workers)): ?>
-                                        <form method="post" style="margin:0; display:flex; gap:8px; align-items:center;" action="<?php echo esc_url(home_url('/customer-area/dashboard/')); ?>">
-                                            <input type="hidden" name="client_id" value="<?php echo $client->ID; ?>">
-                                            <select name="worker_id" required style="padding:6px 12px; border:1px solid #ddd; border-radius:5px; font-size:13px;">
-                                                <option value="">Seleccionar trabajador...</option>
-                                                <?php foreach ($workers as $worker): ?>
-                                                    <option value="<?php echo $worker->ID; ?>"><?php echo esc_html($worker->display_name); ?></option>
-                                                <?php endforeach; ?>
-                                            </select>
-                                            <button type="submit" name="asignar_trabajador" style="background:#2E7D32; color:white; border:none; padding:6px 16px; border-radius:5px; cursor:pointer; font-size:13px;">
-                                                ✓ Asignar
-                                            </button>
-                                        </form>
-                                    <?php endif; ?>
-
-                                    <?php if (!in_array(IG_ROLE_WORKER, $client->roles) && !in_array('administrator', $client->roles)): ?>
-                                        <form method="post" style="margin:0;" action="<?php echo esc_url(home_url('/customer-area/dashboard/')); ?>" onsubmit="return confirm('¿Convertir a <?php echo esc_html($client->display_name); ?> en Trabajador?');">
-                                            <input type="hidden" name="user_id" value="<?php echo $client->ID; ?>">
-                                            <button type="submit" name="promover_trabajador" style="background:#FF9800; color:white; border:none; padding:6px 12px; border-radius:5px; cursor:pointer; font-size:13px;">
-                                                ⬆️ Hacer Trabajador
-                                            </button>
-                                        </form>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?> -->*/ ?>
+               
             </div>
 
             <?php endif; ?>

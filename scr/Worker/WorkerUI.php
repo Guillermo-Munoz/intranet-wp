@@ -158,7 +158,7 @@ class WorkerUI {
 
                 if (!empty($trash_items)) {
                     echo '<table class="cl-table" style="margin-top: 20px;">';
-                    echo '<thead><tr><th>Documento</th><th>Fecha</th><th style="text-align:right;">Acción</th></tr></thead>';
+                    echo '<thead><tr><th>Documento</th><th class="fecha-desktop">Fecha</th><th style="text-align:right;">Acción</th></tr></thead>';
                     echo '<tbody>';
 
                     foreach ($trash_items as $item) {
@@ -168,14 +168,13 @@ class WorkerUI {
 
                         preg_match('/(\d{4}-\d{2}-\d{2})_(\d{2}-\d{2}-\d{2})_(.*)/', $item, $matches);
                         $nombre = isset($matches[3]) ? $matches[3] : $item;
-                        // $fecha = isset($matches[1]) ? $matches[1] . ' ' . str_replace('-', ':', $matches[2]) : date('d/m/Y H:i', filemtime($item_full));
-                       $fecha = isset($matches[1]) 
-                       ? date('d-m-Y', strtotime($matches[1])) . ' ' . str_replace('-', ':', $matches[2])
-                       : date('d-m-Y H:i', filemtime($item_full));
+                        $fecha = isset($matches[1]) 
+                            ? date('d-m-Y', strtotime($matches[1])) . ' ' . str_replace('-', ':', $matches[2])
+                            : date('d-m-Y H:i', filemtime($item_full));
 
-                        echo '<tr>';
-                        echo '<td>'. ($es_carpeta ? '📁' : '📄') . ' <span class="badge-autor badge-papelera">'. esc_html($nombre) . '</span></td>';
-                        echo '<td>' . $fecha . '</td>';
+                        echo '<tr class="search-item-cl">';
+                        echo '<td>'. ($es_carpeta ? '📁' : '📄') . ' <span class="badge-autor badge-papelera">'. esc_html($nombre) . '</span><br><small class="fecha-movil" style="color:#999; font-size:11px;">' . $fecha . '</small></td>';
+                        echo '<td class="fecha-desktop">' . $fecha . '</td>';
                         echo '<td style="text-align:right;"><div style="display:flex; gap:8px; justify-content:flex-end;">';
 
                         if (!$es_carpeta) {
@@ -215,6 +214,7 @@ class WorkerUI {
                 </form>
 
                 <!-- TABLA DE ARCHIVOS -->
+                <div style="max-height: 400px; overflow-y: auto; border: 1px solid #eee; border-radius: 6px;">
                 <table class="cl-table" id="tablaArchivos">
                     <thead>
                         <tr>
@@ -227,7 +227,7 @@ class WorkerUI {
                     <tbody>
                     <?php foreach ($files as $file): ?>
                         <tr class="search-item-cl">
-                            <td>
+                            <td class="nombre-archivo-cl">
                                 <?php if ($file['is_dir']): ?>
                                     <a href="?ver_cliente=<?php echo $ver_cliente; ?>&dir=<?php echo urlencode($file['rel_path']); ?>" style="text-decoration:none; color:#333;">📁 <b><?php echo esc_html(str_replace('_gs_', '', $file['name'])); ?>/</b></a>
                                 <?php else: ?>
@@ -236,8 +236,11 @@ class WorkerUI {
                                     </a>
                                 <?php endif; ?>
                             </td>
-                            <td><?php echo date('d-m-Y H:i', $file['date']); ?></td>      
-                            <td><span class="badge-autor badge-<?php echo strtolower($file['author']); ?>"><?php echo $file['author']; ?></span></td>
+                            <td class="fecha-desktop"><?php echo date('d-m-Y H:i', $file['date']); ?></td>      
+                            <td>
+                                <small class="fecha-movil" style="color:#999; font-size:11px;"><?php echo date('d-m-Y H:i', $file['date']); ?></small>
+                                <span class="badge-autor badge-<?php echo strtolower($file['author']); ?>"><?php echo $file['author']; ?></span>
+                            </td>
                             <td style="text-align:right;">
                                 <div style="display:flex; gap:8px; justify-content:flex-end;">
                                     <?php if (!$file['is_dir']): ?>
@@ -254,7 +257,7 @@ class WorkerUI {
                     <?php endforeach; ?>
                     </tbody>
                 </table>
-
+                </div>
             <?php endif; ?>
 
             </div>
@@ -293,17 +296,24 @@ class WorkerUI {
         </div>
 
      <style>
+        #tablaArchivos thead th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            
+        }
+            .fecha-movil { display: none; }
+            .fecha-desktop { display: table-cell; }
+
             @media (max-width: 600px) {
-                /* LIMPIEZA: Anula bordes del tema (entry-content table) solo en móvil */
+
                 .entry-content table#tablaArchivos, 
                 .entry-content table#tablaArchivos td {
                     border: none !important;
                 }
 
-                /* Ocultar cabecera */
                 #tablaArchivos thead { display: none; }
 
-                /* Convertir cada fila en tarjeta centrada */
                 .search-item-cl {
                     display: flex !important;
                     flex-direction: column;
@@ -311,10 +321,9 @@ class WorkerUI {
                     padding: 15px 10px;
                     border-bottom: 1px solid #eee !important;
                     gap: 5px;
-                    background: #fff; /* Asegura fondo blanco sobre el posible gris del tema */
+                    background: #fff;
                 }
 
-                /* Forzar que cada celda sea bloque y esté centrada */
                 .search-item-cl td {
                     display: block !important;
                     width: 100% !important;
@@ -323,10 +332,39 @@ class WorkerUI {
                     border: none !important;
                 }
 
-                /* Centrar el contenedor de botones de acción */
+                /* Más específico que td — oculta la fecha de escritorio */
+                .search-item-cl td.fecha-desktop {
+                    display: none !important;
+                    height: 0 !important;
+                    padding: 0 !important;
+                    overflow: hidden !important;
+                }
+
+                /* Muestra la fecha móvil */
+                .fecha-movil { display: inline !important; }
+
                 .search-item-cl td div {
                     justify-content: center !important;
                     margin-top: 8px;
+                }
+
+                .entry-content table:not(.variations) {
+                    border: none !important;
+                }
+
+                .cl-table tr, .gs-table tr {
+                    border: 1px solid #080808 !important;
+                    margin-bottom: 10px;
+                    border-radius: 8px;
+                    padding: 5px !important;
+                }
+
+                .nombre-archivo-cl {
+                    background: #ececec;
+                    padding: 5px 10px;
+                    border-radius: 4px;
+                    display: inline-block;
+                    margin-bottom: 5px;
                 }
             }
         </style>
