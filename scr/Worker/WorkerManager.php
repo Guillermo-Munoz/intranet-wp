@@ -238,12 +238,16 @@ class WorkerManager {
  * @return string Autor del archivo (Sistema, Trabajador o Cliente)
  */
 private function getAuthor($filename) {
-    if ($filename === INTRANET_YEAR) {
-        return 'Sistema';
-    }
+
     if (strpos($filename, '_gs_') === 0) {
         return 'Trabajador';
     }
+
+    if (substr($filename, -4) === '_sys') {
+        return 'Sistema';
+    }
+
     return 'Cliente';
 }
+
 }
