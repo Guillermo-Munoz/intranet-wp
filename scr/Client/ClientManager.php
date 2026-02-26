@@ -17,6 +17,9 @@ class ClientManager {
         intranet_ensure_directory($this->base_path);
         intranet_ensure_year_directory($this->base_path);
     }
+    private function isSystemFolder($filename) {
+    return substr($filename, -5) === '_sys';
+}
     
     public function getIdCarpeta() {
         return $this->id_carpeta;
@@ -103,13 +106,20 @@ class ClientManager {
     }
 }
 
-    private function getAuthor($filename) {
-        if (strpos($filename, '_gs_') === 0) {
-            return 'Gestoría';
-        } elseif ($filename === INTRANET_YEAR) {
-            return 'Sistema';
-        } else {
-            return 'Cliente';
-        }
+   private function getAuthor($filename) {
+
+    // Archivo de gestoría (empieza por _gs_)
+    if (strpos($filename, '_gs_') === 0) {
+        return 'Gestoría';
     }
+
+    // Archivo o carpeta del sistema (termina en _sys)
+    if (substr($filename, -4) === '_sys') {
+        return 'Sistema';
+    }
+
+    // Todo lo demás es del cliente
+    return 'Cliente';
+}
+
 }
