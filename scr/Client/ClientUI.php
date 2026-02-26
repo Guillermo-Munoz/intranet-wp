@@ -52,7 +52,7 @@ class ClientUI {
                         <input type="file" name="archivo_cliente[]" id="inputCl" multiple style="display:none;">
                     </div>
                 </form>
-                
+                <div style="max-height: 400px; overflow-y: auto; border: 1px solid #eee; border-radius: 6px;">
                 <table class="cl-table" id="tablaArchivos">
                     <thead>
                         <tr>
@@ -65,7 +65,7 @@ class ClientUI {
                     <tbody>
                     <?php foreach ($files as $file): ?>
                         <tr class="search-item-cl">
-                            <td>
+                            <td class="nombre-archivo-cl">
                                 <?php if ($file['is_dir']): ?>
                                     <a href="?ver_cliente=<?php echo $ver_cliente; ?>&dir=<?php echo urlencode($file['rel_path']); ?>" style="text-decoration:none; color:#333;">📁 <b><?php echo esc_html(str_replace('_gs_', '', $file['name'])); ?>/</b></a>
                                 <?php else: ?>
@@ -74,9 +74,12 @@ class ClientUI {
                                     </a>
                                 <?php endif; ?>
                             </td>
-                            <td><?php echo date('d-m-Y H:i', $file['date']); ?></td>      
-
-                            <td><span class="badge-autor badge-<?php echo strtolower($file['author']); ?>"><?php echo $file['author']; ?></span></td>
+                            <td><?php echo date('d-m-Y H:i', $file['date']); ?></td> 
+                            <td>     
+                            <small class="fecha-movil" style="color:#999; font-size:11px;"><?php echo date('d-m-Y H:i', $file['date']); ?></small>
+                            <span class="badge-autor badge-<?php echo strtolower($file['author']); ?>"><?php echo $file['author']; ?></span>
+                            </td>
+                            
                             <td style="text-align:right;">
                             <div style="display:flex; gap:8px; justify-content:flex-end; align-items:center;">
                                 
@@ -108,11 +111,25 @@ class ClientUI {
                     <?php endforeach; ?>
                     </tbody>
                 </table>
+                </div>
             </div>
         </div>
         
         <style>
+            #tablaArchivos thead th {
+                position: sticky;
+                top: 0;
+                z-index: 1;
+              
+            }
+                    .fecha-movil { display: none; }
+            
             @media (max-width: 600px) {
+                 /* Por defecto la fecha móvil está oculta */
+                .fecha-movil { display: inline; }
+                /* Ocultar la columna de fecha en móvil */
+                #tablaArchivos thead th:nth-child(2),
+                #tablaArchivos tbody td:nth-child(2) { display: none; }
                 #tablaArchivos thead { display: none; } /* Escondemos cabecera */
                 
                 .search-item-cl { 
@@ -135,8 +152,29 @@ class ClientUI {
                 /* Ajuste para que los botones de acción no se estiren */
                 .search-item-cl td:last-child div { 
                     justify-content: center !important; 
-                    margin-top: 10px;
+                   
                 }
+                /*Quitar bordes en móvil*/
+                .entry-content table:not(.variations) {
+                    border: none !important;
+                }
+                /*Vista de tarjetas para móvil*/
+                .cl-table tr, .gs-table tr {
+                    border: 1px solid #080808 !important;
+                    margin-bottom: 10px;
+                    border-radius: 8px;
+                    background: ##f5f5f5;
+                    padding: 5px !important;
+                }
+                /*Fondo nomnre de archivo o carpeta en móvil*/
+                .nombre-archivo-cl {
+                    background: #ececec;
+                    padding: 5px 10px;
+                    border-radius: 4px;
+                    display: inline-block;
+                    margin-bottom: 5px;
+                }
+
             }
         </style>
         <script>
