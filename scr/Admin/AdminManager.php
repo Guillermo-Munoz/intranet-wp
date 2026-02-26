@@ -93,13 +93,29 @@ class AdminManager {
         return @rmdir($path);
     }
     
+    // private function getAuthor($filename) {
+    //     // Si empieza por _gs_ es Gestoría
+    //     if (strpos($filename, '_gs_') === 0) {
+    //         return 'Gestoría';
+    //     } 
+    //     // Si el nombre contiene una fecha típica de subida de cliente (ej. 2023_...) 
+    //     // o simplemente no tiene prefijo, asumimos Cliente
+    //     return 'Cliente';
+    // }
     private function getAuthor($filename) {
-        // Si empieza por _gs_ es Gestoría
-        if (strpos($filename, '_gs_') === 0) {
-            return 'Gestoría';
-        } 
-        // Si el nombre contiene una fecha típica de subida de cliente (ej. 2023_...) 
-        // o simplemente no tiene prefijo, asumimos Cliente
-        return 'Cliente';
+
+    // Gestoría → empieza por _gs_
+    if (strpos($filename, '_gs_') === 0) {
+        return 'Gestoría';
     }
+
+    // Sistema → termina en _sys
+    if (substr($filename, -4) === '_sys') {
+        return 'Sistema';
+    }
+
+    // Todo lo demás es Cliente
+    return 'Cliente';
+}
+
 }
