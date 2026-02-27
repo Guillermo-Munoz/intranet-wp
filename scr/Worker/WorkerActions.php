@@ -7,6 +7,7 @@ use IntranetGestoria\Utils\SendEmail;
 class WorkerActions {
 
     public static function handle() {
+         date_default_timezone_set('Europe/Madrid');
         // Verificar que el usuario actual es un trabajador
         if (!ig_is_worker(get_current_user_id())) {
             return;

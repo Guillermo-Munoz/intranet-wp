@@ -9,6 +9,7 @@ use IntranetGestoria\Utils\SendEmail;
 class AdminActions {
     
     public static function handle() {
+         date_default_timezone_set('Europe/Madrid');
         // Procesar acciones de roles sin validación de permisos global (cada handler válida)
         if (isset($_POST['promover_trabajador'])) {
             self::handlePromoteToWorker();
