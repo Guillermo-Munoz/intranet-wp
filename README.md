@@ -61,7 +61,6 @@ wp-content/
             └── css/
                 └── styles.css              (15) ← CSS EXTERNO
 ```
-
 ## 🚀 INSTALACIÓN PASO A PASO
 
 ### PASO 1: Copia la carpeta en Plugins
