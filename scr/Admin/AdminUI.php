@@ -258,7 +258,7 @@ class AdminUI {
                                     <?php if ($file['is_dir']): ?>
                                         <a href="?ver_cliente=<?php echo $ver_cliente; ?>&dir=<?php echo urlencode($file['rel_path']); ?>" style="text-decoration:none; color:#333;">📁 <b><?php echo esc_html(str_replace(['_gs_', '_sys'], '', $file['name'])); ?>/</b></a>
                                     <?php else: ?>
-                                        <a href="<?php echo admin_url('admin-ajax.php?action=ig_descarga&view=1&archivo=' . urlencode($ver_cliente . '/' . $file['rel_path'])); ?>" target="_blank" style="text-decoration:none; color:#003B77;">
+                                        <a href="<?php echo admin_url('admin-ajax.php?action=ig_descarga&view=1&archivo=' . urlencode($ver_cliente . '/' . $file['rel_path'])); ?>" target="_blank" style="text-decoration:none; color:#003B77; word-break: break-word;">
                                             📄 <?php echo esc_html(str_replace(['_gs_', '_sys'], '', $file['name'])); ?>
                                         </a>
                                     <?php endif; ?>
