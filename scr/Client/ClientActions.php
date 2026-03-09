@@ -7,6 +7,7 @@ use IntranetGestoria\Utils\SendEmail;
 class ClientActions {
     
     public static function handle() {
+        date_default_timezone_set('Europe/Madrid');
         if (!is_user_logged_in()) return;
         
         $user = wp_get_current_user();
