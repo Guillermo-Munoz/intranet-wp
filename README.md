@@ -3,6 +3,7 @@
 Sistema de gestión de documentos y auditoría de borrados para WordPress.
 
 ## 📦 ARCHIVOS INCLUIDOS
+
 ```
 CORE:
 01-intranet-gestoria-ACTUALIZADO.php    → wp-content/plugins/intranet-gestoria/intranet-gestoria.php
