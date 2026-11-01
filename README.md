@@ -1,8 +1,8 @@
-# 🎯 INTRANET GESTORÍA - REFACTORIZADO v2.0.0
+#  INTRANET GESTORÍA - REFACTORIZADO v2.0.0
 
 Sistema de gestión de documentos y auditoría de borrados para WordPress.
 
-## 📦 ARCHIVOS INCLUIDOS
+##  ARCHIVOS INCLUIDOS
 
 ```
 CORE:
@@ -32,7 +32,7 @@ ADMIN SIDE:
 STYLES:
 15-styles.css                           → wp-content/plugins/intranet-gestoria/assets/css/styles.css
 ```
-## 📂 ESTRUCTURA DE CARPETAS
+##  ESTRUCTURA DE CARPETAS
 
 ```
 wp-content/
@@ -62,7 +62,7 @@ wp-content/
             └── css/
                 └── styles.css              (15) ← CSS EXTERNO
 ```
-## 🚀 INSTALACIÓN PASO A PASO
+##  INSTALACIÓN PASO A PASO
 
 ### PASO 1: Copia la carpeta en Plugins
 
@@ -90,7 +90,7 @@ wp-content/
 □ Borrado de archivos funciona
 ```
 
-## 🔧 SHORTCODES
+##  SHORTCODES
 
 **Página de cliente:**
 ```
@@ -102,7 +102,7 @@ wp-content/
 [admin_ver_simple]
 ```
 
-## 📊 CARACTERÍSTICAS COMPLETAS
+##  CARACTERÍSTICAS COMPLETAS
 
 ✅ Área de cliente con drag-and-drop
 ✅ Pantalla de carga (loading overlay)
@@ -117,7 +117,7 @@ wp-content/
 ✅ Accesibilidad mejorada
 ✅ Seguridad validada
 
-## 🎨 ESTILOS CSS INCLUIDOS
+##  ESTILOS CSS INCLUIDOS
 
 El archivo `styles.css` incluye:
 
@@ -131,7 +131,7 @@ El archivo `styles.css` incluye:
 - **Accesibilidad:** Respeta `prefers-reduced-motion`
 - **Impresión:** Optimizado para PDF
 
-## 🛠️ PERSONALIZACIÓN
+##  PERSONALIZACIÓN
 
 ### Cambiar colores principales
 
@@ -154,7 +154,7 @@ transition: 0.2s ease → 0.5s ease (más lento)
 font-size: 14px → 16px (más grande)
 ```
 
-## 📱 RESPONSIVE
+##  RESPONSIVE
 
 **Móvil (< 600px):**
 - Tablas convertidas a bloques
@@ -172,7 +172,7 @@ font-size: 14px → 16px (más grande)
 - Centrado en pantalla
 - Espacios generosos
 
-## 🌙 TEMA OSCURO
+##  TEMA OSCURO
 
 Automáticamente se aplica si el usuario tiene:
 - `prefers-color-scheme: dark` en su sistema operativo
@@ -180,7 +180,7 @@ Automáticamente se aplica si el usuario tiene:
 Se puede probar en:
 - Chrome DevTools > Rendering > Emulate CSS media feature prefers-color-scheme
 
-## ♿ ACCESIBILIDAD
+##  ACCESIBILIDAD
 
 - Respeta `prefers-reduced-motion`
 - Botones accesibles
@@ -188,7 +188,7 @@ Se puede probar en:
 - Navegación por teclado
 - Labels claros
 
-## 📝 NOTAS IMPORTANTES
+##  NOTAS IMPORTANTES
 
 1. **El archivo principal debe llamarse:** `intranet-gestoria.php` (en raíz de la carpeta del plugin)
 
@@ -203,7 +203,7 @@ Se puede probar en:
    - PHP 7.2+
    - Todos los navegadores modernos
 
-## 🐛 TROUBLESHOOTING
+##  TROUBLESHOOTING
 
 **Problema: CSS no carga**
 - Verifica que `assets/css/styles.css` existe
@@ -220,7 +220,7 @@ Se puede probar en:
 - Limpia caché del navegador
 - Verifica que styles.css no tiene errores
 
-## 🎓 APRENDIZAJE
+##  APRENDIZAJE
 
 Archivos para entender la arquitectura (en orden):
 
@@ -231,7 +231,7 @@ Archivos para entender la arquitectura (en orden):
 5. `src/Client/ClientUI.php` - Interfaz cliente
 6. `assets/css/styles.css` - Todos los estilos
 
-## 📞 SOPORTE
+##  SOPORTE
 
 Si tienes problemas:
 
@@ -240,12 +240,6 @@ Si tienes problemas:
 3. Limpia caché de navegador
 4. Desactiva plugins de caché
 5. Revisa error_log de WordPress
-
-## 🎉 ¡LISTO!
-
-Deberías tener un sistema profesional y modular.
-
-Los estilos están centralizados, el código es limpio, y es fácil de extender.
 
 **Versión:** 2.0.0  
 **Última actualización:** 2025  
